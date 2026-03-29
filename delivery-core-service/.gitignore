@@ -44,5 +44,3 @@ postgres_data/
 
 ### Environment ###
 .env
-
-.DS_Store
