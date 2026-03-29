@@ -7,13 +7,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/delivery_db
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      SPRING_PROFILES_ACTIVE: prod
     ports:
-      - "8080:8080"
+      - "${SERVER_PORT:-8080}:8080"
     restart: unless-stopped
 
   postgres:

@@ -1,0 +1,27 @@
+# =============================================
+# Perfil DEV - Desarrollo local
+# =============================================
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/delivery_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+# Swagger habilitado
+springdoc:
+  swagger-ui:
+    enabled: true
+
+# Logs detallados
+logging:
+  level:
+    org.delivery: DEBUG
+    org.hibernate.SQL: DEBUG
