@@ -47,4 +47,10 @@ public class DomiciliarioController {
         domiciliarioService.actualizarUbicacion(request);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/cedula/{cedula}")
+    @Operation(summary = "Buscar domiciliario por cédula")
+    public ResponseEntity<DomiciliarioResponse> buscarPorCedula(@PathVariable String cedula) {
+        return ResponseEntity.ok(domiciliarioService.buscarPorCedula(cedula));
+    }
 }

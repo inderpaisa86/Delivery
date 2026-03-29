@@ -19,6 +19,12 @@ public class Domiciliario {
     @Column(nullable = false, length = 100)
     private String nombre;
 
+    @Column(unique = true, length = 20)
+    private String cedula;
+
+    @Column(columnDefinition = "TEXT")
+    private String foto;
+
     @Column(nullable = false, length = 20)
     private String telefono;
 

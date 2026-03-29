@@ -31,6 +31,8 @@ public class DomiciliarioService {
 
         Domiciliario d = Domiciliario.builder()
                 .nombre(request.nombre())
+                .cedula(request.cedula())
+                .foto(request.foto())
                 .telefono(request.telefono())
                 .lat(request.lat())
                 .lng(request.lng())
@@ -44,9 +46,12 @@ public class DomiciliarioService {
         Domiciliario d = domiciliarioRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Domiciliario no encontrado: " + id));
         d.setNombre(request.nombre());
+        d.setCedula(request.cedula());
+        d.setFoto(request.foto());
         d.setTelefono(request.telefono());
-        d.setLat(request.lat());
-        d.setLng(request.lng());
+        // Solo actualizar coordenadas si vienen en el request
+        if (request.lat() != null) d.setLat(request.lat());
+        if (request.lng() != null) d.setLng(request.lng());
         return toResponse(domiciliarioRepository.save(d));
     }
 
@@ -77,8 +82,15 @@ public class DomiciliarioService {
                 .stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
+    public DomiciliarioResponse buscarPorCedula(String cedula) {
+        Domiciliario d = domiciliarioRepository.findByCedula(cedula)
+                .orElseThrow(() -> new IllegalArgumentException("Domiciliario no encontrado con cédula: " + cedula));
+        return toResponse(d);
+    }
+
     private DomiciliarioResponse toResponse(Domiciliario d) {
-        return new DomiciliarioResponse(d.getId(), d.getNombre(), d.getTelefono(),
-                d.isDisponible(), d.getLat(), d.getLng(), d.getRestaurante().getId());
+        return new DomiciliarioResponse(d.getId(), d.getNombre(), d.getCedula(), d.getFoto(),
+                d.getTelefono(), d.isDisponible(), d.getLat(), d.getLng(), d.getRestaurante().getId());
     }
 }
