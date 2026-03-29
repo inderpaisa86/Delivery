@@ -81,6 +81,8 @@ export interface PedidoResponse {
   clienteTelefono: string;
   clienteNombre: string;
   direccion: string;
+  lat: number | null;
+  lng: number | null;
   estado: EstadoPedido;
   total: number;
   trackingToken: string;

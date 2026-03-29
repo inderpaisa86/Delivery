@@ -32,18 +32,21 @@ public class WhatsAppMessageService {
     private final RestauranteService restauranteService;
     private final IWhatsAppPort whatsAppPort;
     private final String verifyToken;
+    private final String trackingBaseUrl;
 
     public WhatsAppMessageService(
             IProductoRepository productoRepository,
             PedidoService pedidoService,
             RestauranteService restauranteService,
             IWhatsAppPort whatsAppPort,
-            @Value("${whatsapp.verify.token}") String verifyToken) {
+            @Value("${whatsapp.verify.token}") String verifyToken,
+            @Value("${app.tracking.base-url:http://localhost:5173}") String trackingBaseUrl) {
         this.productoRepository = productoRepository;
         this.pedidoService = pedidoService;
         this.restauranteService = restauranteService;
         this.whatsAppPort = whatsAppPort;
         this.verifyToken = verifyToken;
+        this.trackingBaseUrl = trackingBaseUrl;
     }
 
     public ResponseEntity<String> verificarWebhook(String mode, String token, String challenge) {
@@ -65,7 +68,14 @@ public class WhatsAppMessageService {
     }
 
     public void procesarMensaje(WhatsAppMessage message) {
-        log.info("Mensaje de [{}]: {}", message.from(), message.body());
+        log.info("Mensaje de [{}] tipo [{}]: {}", message.from(), message.type(),
+                message.isText() ? message.body() : "ubicación");
+
+        // Si es un mensaje de ubicación, actualizar pedido pendiente
+        if (message.isLocation()) {
+            procesarUbicacion(message);
+            return;
+        }
 
         Restaurante restaurante;
         try {
@@ -96,21 +106,45 @@ public class WhatsAppMessageService {
         try {
             PedidoRequest request = new PedidoRequest(
                     restaurante.getId(),
-                    message.from(), null, "Pendiente por confirmar",
+                    message.from(), null, "Pendiente ubicación",
                     null, null, detalles);
 
             PedidoResponse response = pedidoService.crearPedido(request);
 
-            // Enviar resumen del pedido al cliente
+            // Enviar resumen y pedir ubicación
             String resumen = generarResumenPedido(response);
             whatsAppPort.enviarMensaje(message.from(), resumen);
+            whatsAppPort.enviarMensaje(message.from(),
+                    "📍 Ahora envíanos tu *ubicación* para saber dónde entregar.\n\n" +
+                    "Toca el ícono 📎 → Ubicación → Enviar tu ubicación actual.");
 
-            log.info("Pedido #{} creado desde WhatsApp para {} (restaurante: {})",
+            log.info("Pedido #{} creado desde WhatsApp para {} (restaurante: {}). Esperando ubicación.",
                     response.id(), message.from(), restaurante.getNombre());
         } catch (Exception e) {
             log.error("Error creando pedido desde WhatsApp: {}", e.getMessage());
             whatsAppPort.enviarMensaje(message.from(),
                     "⚠️ No pudimos procesar tu pedido. Intenta de nuevo.");
+        }
+    }
+
+    private void procesarUbicacion(WhatsAppMessage message) {
+        // Usar la dirección de WhatsApp si viene, sino generar una con coordenadas
+        String direccion = message.address() != null
+                ? message.address()
+                : String.format("Lat: %.6f, Lng: %.6f", message.latitude(), message.longitude());
+
+        boolean updated = pedidoService.actualizarUbicacionPedido(
+                message.from(), message.latitude(), message.longitude(), direccion);
+
+        if (updated) {
+            whatsAppPort.enviarMensaje(message.from(),
+                    "✅ Ubicación recibida: " + direccion +
+                    "\nTu pedido está siendo procesado. ¡Te avisaremos cuando esté listo! 🍽️");
+            log.info("Ubicación recibida de {}: {} ({}, {})",
+                    message.from(), direccion, message.latitude(), message.longitude());
+        } else {
+            whatsAppPort.enviarMensaje(message.from(),
+                    "ℹ️ No tienes pedidos pendientes de ubicación. Envía tu pedido primero.");
         }
     }
 
@@ -140,7 +174,8 @@ public class WhatsAppMessageService {
         }
 
         sb.append(String.format("\n💰 *Total: $%,.0f*", response.total()));
-        sb.append("\n\nTe notificaremos cuando esté listo. 🍽️");
+        sb.append(String.format("\n\n🔎 *Número de seguimiento:* %d", response.id()));
+        sb.append(String.format("\n🔗 *Tracking:* %s/track/%s", trackingBaseUrl, response.trackingToken()));
         return sb.toString();
     }
 
@@ -172,10 +207,67 @@ public class WhatsAppMessageService {
 
             if (cantidad <= 0 || cantidad > 100) continue;
 
-            productoRepository.findByNombreIgnoreCase(nombreProducto)
+            buscarProducto(nombreProducto)
                     .ifPresent(p -> detalles.add(new DetallePedidoRequest(p.getId(), cantidad)));
         }
 
         return detalles;
+    }
+
+    /**
+     * Busca un producto por nombre con tolerancia a plurales.
+     * Intenta: nombre exacto → singular (sin s/es) → búsqueda parcial.
+     */
+    private java.util.Optional<Producto> buscarProducto(String nombre) {
+        // 1. Búsqueda exacta
+        var result = productoRepository.findByNombreIgnoreCase(nombre);
+        if (result.isPresent()) return result;
+
+        // 2. Normalizar plural → singular en español
+        String singular = normalizarPlural(nombre);
+        if (!singular.equals(nombre)) {
+            result = productoRepository.findByNombreIgnoreCase(singular);
+            if (result.isPresent()) return result;
+        }
+
+        // 3. Búsqueda parcial (LIKE %nombre%)
+        result = productoRepository.findFirstByNombreContainingIgnoreCaseAndActivoTrue(singular);
+        if (result.isPresent()) return result;
+
+        // 4. Búsqueda parcial con el nombre original
+        return productoRepository.findFirstByNombreContainingIgnoreCaseAndActivoTrue(nombre);
+    }
+
+    /**
+     * Normaliza plurales comunes del español a singular.
+     * hamburguesas → hamburguesa, pizzas → pizza, gaseosas → gaseosa
+     * jugos → jugo, perros → perro
+     */
+    private String normalizarPlural(String palabra) {
+        String lower = palabra.toLowerCase();
+
+        // Palabras terminadas en "ces" → "z" (ej: arroces → arroz)
+        if (lower.endsWith("ces")) {
+            return palabra.substring(0, palabra.length() - 3) + "z";
+        }
+        // Palabras terminadas en "es" (pero no "ses") → quitar "es" (ej: hamburgueses no aplica)
+        // Palabras terminadas en "es" después de consonante → quitar "es"
+        if (lower.endsWith("es") && lower.length() > 3) {
+            char previa = lower.charAt(lower.length() - 3);
+            // Si antes de "es" hay consonante (no vocal), quitar "es"
+            if (!esVocal(previa)) {
+                return palabra.substring(0, palabra.length() - 2);
+            }
+        }
+        // Palabras terminadas en "s" → quitar "s" (caso más común)
+        if (lower.endsWith("s") && lower.length() > 2) {
+            return palabra.substring(0, palabra.length() - 1);
+        }
+
+        return palabra;
+    }
+
+    private boolean esVocal(char c) {
+        return "aeiouáéíóú".indexOf(Character.toLowerCase(c)) >= 0;
     }
 }

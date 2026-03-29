@@ -89,6 +89,28 @@ public class PedidoService {
                 .map(this::toResponse);
     }
 
+    /**
+     * Actualiza la ubicación de entrega de un pedido pendiente (sin lat/lng).
+     * Retorna true si encontró y actualizó un pedido.
+     */
+    @Transactional
+    public boolean actualizarUbicacionPedido(String telefono, Double lat, Double lng, String direccion) {
+        return pedidoRepository
+                .findFirstByClienteTelefonoAndEstadoAndLatIsNullOrderByFechaDesc(
+                        telefono, EstadoPedido.NUEVO)
+                .map(pedido -> {
+                    pedido.setLat(lat);
+                    pedido.setLng(lng);
+                    if (direccion != null && !direccion.isBlank()) {
+                        pedido.setDireccion(direccion);
+                    }
+                    pedidoRepository.save(pedido);
+                    log.info("Ubicación actualizada para pedido #{} ({}, {})", pedido.getId(), lat, lng);
+                    return true;
+                })
+                .orElse(false);
+    }
+
     @Transactional
     public PedidoResponse cambiarEstado(Long id, EstadoPedido nuevoEstado) {
         Pedido pedido = pedidoRepository.findById(id)
@@ -116,6 +138,8 @@ public class PedidoService {
                 pedido.getCliente().getTelefono(),
                 pedido.getCliente().getNombre(),
                 pedido.getDireccion(),
+                pedido.getLat(),
+                pedido.getLng(),
                 pedido.getEstado(),
                 pedido.getTotal(),
                 pedido.getTrackingToken(),

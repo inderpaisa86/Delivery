@@ -12,4 +12,6 @@ public interface IProductoRepository extends JpaRepository<Producto, Long> {
     List<Producto> findByActivoTrueAndRestauranteId(Long restauranteId);
     Page<Producto> findByRestauranteIdAndActivoTrue(Long restauranteId, Pageable pageable);
     Optional<Producto> findByNombreIgnoreCase(String nombre);
+    /** Búsqueda parcial por nombre (LIKE %nombre%) */
+    Optional<Producto> findFirstByNombreContainingIgnoreCaseAndActivoTrue(String nombre);
 }

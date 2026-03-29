@@ -13,6 +13,8 @@ public record PedidoResponse(
         String clienteTelefono,
         String clienteNombre,
         String direccion,
+        Double lat,
+        Double lng,
         EstadoPedido estado,
         BigDecimal total,
         String trackingToken,
