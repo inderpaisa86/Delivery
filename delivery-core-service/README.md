@@ -188,6 +188,7 @@ http://localhost:8080/actuator/health
 | `POST` | `/domiciliarios` | Registrar domiciliario |
 | `PUT` | `/domiciliarios/{id}` | Actualizar domiciliario |
 | `GET` | `/domiciliarios/disponibles?restauranteId=1` | Listar disponibles |
+| `GET` | `/domiciliarios/cedula/{cedula}` | Buscar por cédula |
 | `POST` | `/domiciliarios/ubicacion` | Actualizar ubicación |
 
 ### Tracking (públicos)
