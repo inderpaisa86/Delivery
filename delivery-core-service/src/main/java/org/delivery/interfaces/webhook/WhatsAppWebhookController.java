@@ -18,12 +18,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * Webhook de WhatsApp Business.
  * Solo recibe HTTP y delega. Cero lógica de negocio.
  */
 @RestController
 @RequestMapping("/webhook")
+@Tag(name = "Webhook", description = "Webhook de WhatsApp Business API")
 public class WhatsAppWebhookController {
 
     private static final Logger log = LoggerFactory.getLogger(WhatsAppWebhookController.class);
@@ -39,6 +43,7 @@ public class WhatsAppWebhookController {
     }
 
     @GetMapping
+    @Operation(summary = "Verificación", description = "Meta verifica que el webhook es tuyo")
     public ResponseEntity<String> verify(
             @RequestParam("hub.mode") String mode,
             @RequestParam("hub.verify_token") String token,
@@ -54,6 +59,7 @@ public class WhatsAppWebhookController {
     }
 
     @PostMapping
+    @Operation(summary = "Recibir mensajes", description = "Meta envía mensajes de WhatsApp aquí")
     public ResponseEntity<Void> receiveMessage(@RequestBody Map<String, Object> payload) {
         try {
             List<WhatsAppMessage> messages = WhatsAppPayloadParser.extractMessages(payload);
@@ -62,6 +68,7 @@ public class WhatsAppWebhookController {
             log.error("Error procesando mensaje: {}", e.getMessage());
         }
 
+        // Siempre 200 OK para evitar reintentos de Meta
         return ResponseEntity.ok().build();
     }
 }

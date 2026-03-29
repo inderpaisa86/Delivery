@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 /**
@@ -20,6 +22,7 @@ import jakarta.validation.Valid;
  */
 @RestController
 @RequestMapping("/domiciliarios")
+@Tag(name = "Domiciliarios", description = "Gestión de domiciliarios y ubicación")
 public class DomiciliarioController {
 
     private final DomiciliarioService domiciliarioService;
@@ -29,12 +32,14 @@ public class DomiciliarioController {
     }
 
     @GetMapping("/disponibles")
+    @Operation(summary = "Listar disponibles", description = "Retorna domiciliarios disponibles de un restaurante")
     public ResponseEntity<List<Domiciliario>> obtenerDisponibles(
             @RequestParam Long restauranteId) {
         return ResponseEntity.ok(domiciliarioService.obtenerDisponibles(restauranteId));
     }
 
     @PostMapping("/ubicacion")
+    @Operation(summary = "Actualizar ubicación", description = "El domiciliario envía su lat/lng en tiempo real")
     public ResponseEntity<Void> actualizarUbicacion(@Valid @RequestBody UbicacionRequest request) {
         domiciliarioService.actualizarUbicacion(request);
         return ResponseEntity.ok().build();

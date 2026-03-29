@@ -1,6 +1,6 @@
 # 🛵 Delivery Core Service
 
-Backend para sistema de pedidos por WhatsApp con asignación automática de domiciliarios y tracking en tiempo real.
+Backend para sistema de pedidos por WhatsApp con asignación automática de domiciliarios, tracking en tiempo real y soporte multi-tenant (SaaS ready).
 
 ## Tecnologías
 
@@ -14,59 +14,93 @@ Backend para sistema de pedidos por WhatsApp con asignación automática de domi
 
 ## Arquitectura
 
-Clean Architecture con capas desacopladas:
+Clean Architecture con separación estricta de responsabilidades:
 
 ```
 org.delivery/
-├── config/          → Seguridad, manejo de errores, OpenAPI
-├── controller/      → Endpoints REST y Webhook
-├── service/         → Interfaces de negocio
-│   └── impl/        → Implementaciones
-├── repository/      → Acceso a datos (JPA)
-├── domain/          → Entidades JPA
-│   └── enums/       → Estados (pedido, asignación)
-├── dto/             → Objetos de transferencia
-└── parser/          → Parseo del payload de WhatsApp
+├── domain/                                → Entidades JPA + enums
+│   ├── entity/
+│   │   ├── Restaurante.java               (tenant)
+│   │   ├── Cliente.java
+│   │   ├── Producto.java
+│   │   ├── Pedido.java
+│   │   ├── DetallePedido.java
+│   │   ├── Domiciliario.java
+│   │   └── AsignacionDomicilio.java
+│   └── enums/
+│       ├── EstadoPedido.java
+│       └── EstadoAsignacion.java
+├── application/                           → Casos de uso
+│   ├── service/
+│   │   ├── PedidoService.java
+│   │   ├── PedidoStateMachine.java
+│   │   ├── AsignacionService.java
+│   │   ├── DomiciliarioService.java
+│   │   ├── TrackingService.java
+│   │   ├── RestauranteService.java
+│   │   └── WhatsAppMessageService.java
+│   ├── port/
+│   │   ├── WhatsAppPort.java              (interfaz)
+│   │   └── GeoPort.java                   (interfaz)
+│   └── dto/
+├── infrastructure/                        → Implementaciones externas
+│   ├── persistence/repository/
+│   ├── external/
+│   │   ├── whatsapp/
+│   │   │   ├── WhatsAppAdapter.java       (implementa WhatsAppPort)
+│   │   │   └── WhatsAppPayloadParser.java
+│   │   └── geo/
+│   │       └── HaversineAdapter.java      (implementa GeoPort)
+│   ├── config/
+│   │   ├── GlobalExceptionHandler.java
+│   │   ├── OpenApiConfig.java
+│   │   └── SecurityFilter.java
+└── interfaces/                            → Controllers REST
+    ├── rest/
+    │   ├── PedidoController.java
+    │   ├── DomiciliarioController.java
+    │   └── TrackingController.java
+    └── webhook/
+        └── WhatsAppWebhookController.java
 ```
+
+## Principios aplicados
+
+- Clean Architecture: domain → application → infrastructure → interfaces
+- SOLID: interfaces desacopladas (WhatsAppPort, GeoPort), SRP en cada clase
+- Controllers sin lógica de negocio
+- Services contienen los casos de uso
+- Repositories solo acceso a datos
+- DTOs en toda la API (entidades nunca expuestas)
+- Multi-tenant: cada entidad tiene restaurante_id
+- @Async en asignación de domiciliarios para no bloquear el flujo principal
+- Máquina de estados centralizada con acciones automáticas por transición
+- Resolución dinámica de restaurante por número de WhatsApp (SaaS ready)
 
 ## Requisitos previos
 
 - Java 21+
 - Docker y Docker Compose
-- Gradle (incluido via wrapper)
 
 ## Levantar el proyecto
 
-### 1. Clonar el repositorio
-
-```bash
-git clone <url-del-repo>
-cd delivery-core-service
-```
-
-### 2. Levantar PostgreSQL con Docker
+### 1. Levantar PostgreSQL
 
 ```bash
 docker compose up -d
 ```
 
-Esto crea la base de datos `delivery_db`, todas las tablas y carga datos de prueba (6 productos y 3 domiciliarios).
+Crea la BD `delivery_db`, todas las tablas y datos de prueba (1 restaurante, 6 productos, 3 domiciliarios).
 
-Verificar que está corriendo:
-
-```bash
-docker compose ps
-```
-
-### 3. Levantar la aplicación
+### 2. Levantar la aplicación
 
 ```bash
 ./gradlew bootRun
 ```
 
-La app arranca en `http://localhost:8080`.
+Arranca en `http://localhost:8080`.
 
-### 4. Abrir Swagger UI
+### 3. Swagger UI
 
 ```
 http://localhost:8080/swagger-ui.html
@@ -80,12 +114,11 @@ http://localhost:8080/swagger-ui.html
 | `DB_URL` | URL de PostgreSQL | `jdbc:postgresql://localhost:5432/delivery_db` |
 | `DB_USERNAME` | Usuario de BD | `postgres` |
 | `DB_PASSWORD` | Contraseña de BD | `postgres` |
-| `WHATSAPP_VERIFY_TOKEN` | Token de verificación del webhook | `mi-token-secreto` |
-| `WHATSAPP_API_URL` | URL de WhatsApp Business API | `https://graph.facebook.com/v18.0` |
-| `WHATSAPP_API_TOKEN` | Token de acceso de WhatsApp API | (vacío) |
-| `WHATSAPP_PHONE_NUMBER_ID` | ID del número de teléfono en Meta | (vacío) |
-| `APP_API_TOKEN` | Token para endpoints internos | `delivery-internal-token` |
-| `TRACKING_SECRET` | Secret para tokens de tracking | `tracking-secret-key` |
+| `WHATSAPP_VERIFY_TOKEN` | Token verificación webhook | `mi-token-secreto` |
+| `WHATSAPP_API_URL` | URL WhatsApp Business API | `https://graph.facebook.com/v18.0` |
+| `WHATSAPP_API_TOKEN` | Token de acceso WhatsApp | (vacío) |
+| `WHATSAPP_PHONE_NUMBER_ID` | ID teléfono en Meta | (vacío) |
+| `APP_API_TOKEN` | Token endpoints internos | `delivery-internal-token` |
 
 ## Endpoints
 
@@ -94,7 +127,7 @@ http://localhost:8080/swagger-ui.html
 | Método | Ruta | Descripción |
 |---|---|---|
 | `GET` | `/webhook` | Verificación de Meta |
-| `POST` | `/webhook` | Recibir mensajes de WhatsApp |
+| `POST` | `/webhook` | Recibir mensajes |
 
 ### Pedidos (requieren token)
 
@@ -108,61 +141,36 @@ http://localhost:8080/swagger-ui.html
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/domiciliarios/disponibles` | Listar disponibles |
+| `GET` | `/domiciliarios/disponibles?restauranteId=1` | Listar disponibles |
 | `POST` | `/domiciliarios/ubicacion` | Actualizar ubicación |
 
 ### Tracking (públicos)
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/track/{token}` | Tracking público del pedido |
-| `GET` | `/ubicacion/{domiciliarioId}` | Ubicación del domiciliario |
+| `GET` | `/track/{token}` | Tracking público |
+| `GET` | `/ubicacion/{domiciliarioId}` | Ubicación domiciliario |
 
 ## Autenticación
 
-Los endpoints internos requieren el header:
+Endpoints internos requieren:
 
 ```
 Authorization: Bearer delivery-internal-token
 ```
 
-Los endpoints de `/webhook`, `/track/` y `/swagger-ui` son públicos.
+Públicos: `/webhook`, `/track/`, `/swagger-ui`
 
-## Ejemplos con cURL
+## Ejemplos cURL
 
-### Verificación del webhook
-
-```bash
-curl "http://localhost:8080/webhook?hub.mode=subscribe&hub.verify_token=mi-token-secreto&hub.challenge=test123"
-```
-
-### Recibir mensaje de WhatsApp
-
-```bash
-curl -X POST http://localhost:8080/webhook \
-  -H "Content-Type: application/json" \
-  -d '{
-    "entry": [{
-      "changes": [{
-        "value": {
-          "messages": [{
-            "from": "573001234567",
-            "type": "text",
-            "text": { "body": "2 hamburguesas" }
-          }]
-        }
-      }]
-    }]
-  }'
-```
-
-### Crear pedido vía API
+### Crear pedido
 
 ```bash
 curl -X POST http://localhost:8080/pedidos \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer delivery-internal-token" \
   -d '{
+    "restauranteId": 1,
     "telefono": "573001234567",
     "nombre": "Juan Pérez",
     "direccion": "Calle 100 #15-20, Bogotá",
@@ -175,23 +183,24 @@ curl -X POST http://localhost:8080/pedidos \
   }'
 ```
 
-### Cambiar estado de pedido
+### Cambiar estado
 
 ```bash
 curl -X PUT "http://localhost:8080/pedidos/1/estado?estado=CONFIRMADO" \
   -H "Authorization: Bearer delivery-internal-token"
 ```
 
-### Actualizar ubicación de domiciliario
+### Mensaje WhatsApp
 
 ```bash
-curl -X POST http://localhost:8080/domiciliarios/ubicacion \
+curl -X POST http://localhost:8080/webhook \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer delivery-internal-token" \
-  -d '{ "domiciliarioId": 1, "lat": 4.6120, "lng": -74.0800 }'
+  -d '{"entry":[{"changes":[{"value":{"messages":[{
+    "from":"573001234567","type":"text",
+    "text":{"body":"2 hamburguesas, 1 gaseosa"}}]}}]}]}'
 ```
 
-### Tracking público de pedido
+### Tracking
 
 ```bash
 curl http://localhost:8080/track/{tracking-token}
@@ -203,28 +212,29 @@ curl http://localhost:8080/track/{tracking-token}
 Cliente escribe por WhatsApp
         │
         ▼
-  POST /webhook (Meta envía el mensaje)
-        │
-        ▼
-  WhatsAppPayloadParser (extrae from + body)
+  POST /webhook → WhatsAppPayloadParser
         │
         ▼
   WhatsAppMessageService (parsea "2 hamburguesas")
         │
         ▼
-  PedidoService.crearPedido() → notifica al cliente
+  PedidoService.crearPedido() → WhatsAppPort.notificar()
         │
         ▼
-  Restaurante cambia estado: CONFIRMADO → PREPARANDO → LISTO
+  Restaurante cambia estado vía API:
+  CONFIRMADO → PREPARANDO → LISTO
         │
         ▼
-  Al marcar LISTO → AsignacionService asigna domiciliario más cercano (Haversine)
+  PedidoStateMachine detecta LISTO
+        → AsignacionService.asignarDomiciliario() (@Async + Haversine)
+        → Estado cambia a EN_CAMINO
+        → WhatsAppPort.notificar()
         │
         ▼
-  Domiciliario actualiza ubicación → cliente hace tracking en tiempo real
+  Domiciliario actualiza ubicación → Cliente hace tracking
         │
         ▼
-  Estado ENTREGADO → notificación final al cliente
+  ENTREGADO → Liberar domiciliario + Notificación final
 ```
 
 ## Estados del pedido
@@ -241,9 +251,10 @@ NUEVO → CONFIRMADO → PREPARANDO → LISTO → EN_CAMINO → ENTREGADO
 ./gradlew test
 ```
 
-## Apagar PostgreSQL
+## Docker
 
 ```bash
-docker compose down       # mantiene datos
-docker compose down -v    # borra datos y volúmenes
+docker compose up -d       # levantar
+docker compose down        # apagar (mantiene datos)
+docker compose down -v     # apagar y borrar datos
 ```

@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 /**
@@ -22,6 +24,7 @@ import jakarta.validation.Valid;
  */
 @RestController
 @RequestMapping("/pedidos")
+@Tag(name = "Pedidos", description = "Gestión del ciclo de vida de pedidos")
 public class PedidoController {
 
     private final PedidoService pedidoService;
@@ -31,16 +34,19 @@ public class PedidoController {
     }
 
     @PostMapping
+    @Operation(summary = "Crear pedido", description = "Crea un pedido con detalles de productos para un restaurante")
     public ResponseEntity<PedidoResponse> crearPedido(@Valid @RequestBody PedidoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pedidoService.crearPedido(request));
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Obtener pedido", description = "Retorna el detalle completo de un pedido")
     public ResponseEntity<PedidoResponse> obtenerPedido(@PathVariable Long id) {
         return ResponseEntity.ok(pedidoService.obtenerPedido(id));
     }
 
     @PutMapping("/{id}/estado")
+    @Operation(summary = "Cambiar estado", description = "Cambia el estado del pedido. Dispara acciones automáticas (asignación, notificaciones)")
     public ResponseEntity<PedidoResponse> cambiarEstado(
             @PathVariable Long id,
             @RequestParam EstadoPedido estado) {

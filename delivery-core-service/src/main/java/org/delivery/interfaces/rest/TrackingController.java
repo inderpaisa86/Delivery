@@ -9,10 +9,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * API pública de tracking en tiempo real.
  */
 @RestController
+@Tag(name = "Tracking", description = "Tracking público de pedidos en tiempo real")
 public class TrackingController {
 
     private final TrackingService trackingService;
@@ -25,11 +29,13 @@ public class TrackingController {
     }
 
     @GetMapping("/track/{token}")
+    @Operation(summary = "Tracking de pedido", description = "Consulta pública del estado y ubicación del pedido usando token único")
     public ResponseEntity<TrackingResponse> obtenerTracking(@PathVariable String token) {
         return ResponseEntity.ok(trackingService.obtenerTracking(token));
     }
 
     @GetMapping("/ubicacion/{domiciliarioId}")
+    @Operation(summary = "Ubicación domiciliario", description = "Consulta la ubicación actual de un domiciliario")
     public ResponseEntity<UbicacionResponse> obtenerUbicacion(@PathVariable Long domiciliarioId) {
         return ResponseEntity.ok(domiciliarioService.obtenerUbicacion(domiciliarioId));
     }
