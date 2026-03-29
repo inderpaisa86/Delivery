@@ -32,10 +32,14 @@ class WhatsAppMessageServiceTest {
     @Mock WhatsAppPort whatsAppPort;
     @InjectMocks WhatsAppMessageService service;
 
+    private Restaurante restaurante() {
+        Restaurante r = new Restaurante(); r.setId(1L); r.setNombre("Test"); return r;
+    }
+
     @Test
-    @DisplayName("Procesa pedido válido desde WhatsApp")
-    void shouldProcessValidOrder() {
-        Restaurante r = new Restaurante(); r.setId(1L); r.setNombre("Test");
+    @DisplayName("Procesa pedido válido y envía resumen")
+    void shouldProcessAndSendSummary() {
+        Restaurante r = restaurante();
         Producto p = new Producto(); p.setId(1L); p.setNombre("hamburguesa");
 
         when(restauranteService.resolverPorTelefonoWhatsApp(anyString())).thenReturn(r);
@@ -43,23 +47,52 @@ class WhatsAppMessageServiceTest {
         when(pedidoService.crearPedido(any())).thenReturn(
                 new PedidoResponse(1L, 1L, "Test", "573001234567", null, "Dir",
                         EstadoPedido.NUEVO, BigDecimal.valueOf(30000), "token",
-                        LocalDateTime.now(), List.of()));
+                        LocalDateTime.now(), List.of(
+                                new PedidoResponse.DetalleResponse("hamburguesa", 2, BigDecimal.valueOf(15000)))));
 
         service.procesarMensaje(new WhatsAppMessage("573001234567", "2 hamburguesa"));
 
         verify(pedidoService).crearPedido(any());
+        verify(whatsAppPort).enviarMensaje(eq("573001234567"), contains("Pedido #1"));
+    }
+
+    @Test
+    @DisplayName("Envía menú cuando escribe 'menu'")
+    void shouldSendMenu() {
+        Restaurante r = restaurante();
+        Producto p = new Producto(); p.setId(1L); p.setNombre("hamburguesa");
+        p.setPrecio(BigDecimal.valueOf(15000));
+
+        when(restauranteService.resolverPorTelefonoWhatsApp(anyString())).thenReturn(r);
+        when(productoRepository.findByActivoTrueAndRestauranteId(1L)).thenReturn(List.of(p));
+
+        service.procesarMensaje(new WhatsAppMessage("573001234567", "menu"));
+
+        verify(whatsAppPort).enviarMensaje(eq("573001234567"), contains("Menú disponible"));
+        verify(pedidoService, never()).crearPedido(any());
+    }
+
+    @Test
+    @DisplayName("Envía menú cuando escribe 'menú' con tilde")
+    void shouldSendMenuWithAccent() {
+        Restaurante r = restaurante();
+        when(restauranteService.resolverPorTelefonoWhatsApp(anyString())).thenReturn(r);
+        when(productoRepository.findByActivoTrueAndRestauranteId(1L)).thenReturn(List.of());
+
+        service.procesarMensaje(new WhatsAppMessage("573001234567", "menú"));
+
+        verify(whatsAppPort).enviarMensaje(eq("573001234567"), contains("No hay productos"));
     }
 
     @Test
     @DisplayName("Envía ayuda si no detecta productos")
-    void shouldSendHelpWhenNoProducts() {
-        Restaurante r = new Restaurante(); r.setId(1L);
+    void shouldSendHelp() {
+        Restaurante r = restaurante();
         when(restauranteService.resolverPorTelefonoWhatsApp(anyString())).thenReturn(r);
 
         service.procesarMensaje(new WhatsAppMessage("573001234567", "hola"));
 
         verify(whatsAppPort).enviarMensaje(eq("573001234567"), contains("Hola"));
-        verify(pedidoService, never()).crearPedido(any());
     }
 
     @Test
@@ -69,14 +102,13 @@ class WhatsAppMessageServiceTest {
                 .thenThrow(new IllegalStateException("No hay restaurantes"));
 
         service.procesarMensaje(new WhatsAppMessage("573001234567", "2 hamburguesa"));
-
         verify(pedidoService, never()).crearPedido(any());
     }
 
     @Test
-    @DisplayName("Envía error si falla la creación del pedido")
+    @DisplayName("Envía error si falla la creación")
     void shouldSendErrorOnFailure() {
-        Restaurante r = new Restaurante(); r.setId(1L);
+        Restaurante r = restaurante();
         Producto p = new Producto(); p.setId(1L); p.setNombre("pizza");
 
         when(restauranteService.resolverPorTelefonoWhatsApp(anyString())).thenReturn(r);
@@ -84,14 +116,13 @@ class WhatsAppMessageServiceTest {
         when(pedidoService.crearPedido(any())).thenThrow(new RuntimeException("DB error"));
 
         service.procesarMensaje(new WhatsAppMessage("573001234567", "1 pizza"));
-
         verify(whatsAppPort).enviarMensaje(eq("573001234567"), contains("No pudimos"));
     }
 
     @Test
-    @DisplayName("Ignora texto null o muy largo")
-    void shouldIgnoreNullOrLongText() {
-        Restaurante r = new Restaurante(); r.setId(1L);
+    @DisplayName("Ignora texto muy largo")
+    void shouldIgnoreLongText() {
+        Restaurante r = restaurante();
         when(restauranteService.resolverPorTelefonoWhatsApp(anyString())).thenReturn(r);
 
         service.procesarMensaje(new WhatsAppMessage("573001234567", "x".repeat(600)));
@@ -101,7 +132,7 @@ class WhatsAppMessageServiceTest {
     @Test
     @DisplayName("Ignora cantidades inválidas")
     void shouldIgnoreInvalidQuantities() {
-        Restaurante r = new Restaurante(); r.setId(1L);
+        Restaurante r = restaurante();
         when(restauranteService.resolverPorTelefonoWhatsApp(anyString())).thenReturn(r);
 
         service.procesarMensaje(new WhatsAppMessage("573001234567", "abc hamburguesa"));

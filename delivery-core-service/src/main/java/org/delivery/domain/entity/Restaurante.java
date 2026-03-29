@@ -31,4 +31,7 @@ public class Restaurante {
     @Builder.Default
     @Column(nullable = false)
     private boolean activo = true;
+
+    @Column(name = "whatsapp_phone_id", length = 50)
+    private String whatsappPhoneId;
 }

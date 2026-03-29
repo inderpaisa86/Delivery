@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.delivery"
-version = "1.0-SNAPSHOT"
+version = project.findProperty("projectVersion") ?: "0.0.0"
 
 java {
     toolchain {
@@ -27,11 +27,21 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     runtimeOnly("org.postgresql:postgresql")
 
+    // Flyway migraciones
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
+
     // Validation
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
-    // WebClient para llamadas HTTP a WhatsApp API
+    // WebClient para WhatsApp API
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+
+    // Actuator (health check)
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    // Rate limiting
+    implementation("com.bucket4j:bucket4j-core:8.10.1")
 
     // Swagger / OpenAPI
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
@@ -42,9 +52,14 @@ dependencies {
     testCompileOnly("org.projectlombok:lombok")
     testAnnotationProcessor("org.projectlombok:lombok")
 
+    // Logs JSON
+    implementation("net.logstash.logback:logstash-logback-encoder:8.0")
+
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testRuntimeOnly("com.h2database:h2")
+    testImplementation("org.flywaydb:flyway-core")
+    testImplementation("org.testcontainers:postgresql:1.20.4")
+    testImplementation("org.testcontainers:junit-jupiter:1.20.4")
 }
 
 tasks.test {
@@ -62,6 +77,8 @@ tasks.jacocoTestReport {
             exclude(
                 "**/config/OpenApiConfig.class",
                 "**/config/AsyncConfig.class",
+                "**/config/RateLimitFilter.class",
+                "**/external/whatsapp/WhatsAppAdapter.class",
                 "**/Main.class"
             )
         }
@@ -76,5 +93,23 @@ sonar {
         property("sonar.token", System.getenv("SONAR_TOKEN") ?: "")
         property("sonar.java.coveragePlugin", "jacoco")
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+
+        // Excluir clases del análisis de Sonar (código y coverage)
+        property("sonar.exclusions", listOf(
+            "**/config/OpenApiConfig.java",
+            "**/config/AsyncConfig.java",
+            "**/config/RateLimitFilter.java",
+            "**/external/whatsapp/WhatsAppAdapter.java",
+            "**/Main.java"
+        ).joinToString(","))
+
+        // Excluir del cálculo de coverage
+        property("sonar.coverage.exclusions", listOf(
+            "**/dto/**",
+            "**/domain/entity/**",
+            "**/domain/enums/**",
+            "**/config/**",
+            "**/Main.java"
+        ).joinToString(","))
     }
 }

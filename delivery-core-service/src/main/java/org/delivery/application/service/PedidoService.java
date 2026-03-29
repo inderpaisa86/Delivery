@@ -7,6 +7,8 @@ import org.delivery.application.port.WhatsAppPort;
 import org.delivery.domain.entity.*;
 import org.delivery.domain.enums.EstadoPedido;
 import org.delivery.infrastructure.persistence.repository.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,6 +75,18 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado: " + id));
         return toResponse(pedido);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PedidoResponse> listarPorRestaurante(Long restauranteId, Pageable pageable) {
+        return pedidoRepository.findByRestauranteId(restauranteId, pageable)
+                .map(this::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PedidoResponse> listarPorCliente(String telefono, Pageable pageable) {
+        return pedidoRepository.findByClienteTelefono(telefono, pageable)
+                .map(this::toResponse);
     }
 
     @Transactional

@@ -25,7 +25,8 @@ public class SecurityFilter implements Filter {
 
     private static final Set<String> PUBLIC_PREFIXES = Set.of(
             "/webhook", "/track/",
-            "/swagger-ui", "/v3/api-docs", "/swagger-resources"
+            "/swagger-ui", "/v3/api-docs", "/swagger-resources",
+            "/actuator"
     );
 
     private final String apiToken;

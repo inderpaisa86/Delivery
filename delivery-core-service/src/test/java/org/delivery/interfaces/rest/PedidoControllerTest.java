@@ -5,6 +5,9 @@ import org.delivery.application.service.PedidoService;
 import org.delivery.domain.enums.EstadoPedido;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
@@ -27,27 +30,30 @@ class PedidoControllerTest {
                 LocalDateTime.now(), List.of());
     }
 
-    @Test
-    @DisplayName("Crear pedido retorna 201")
-    void shouldReturn201OnCreate() {
+    @Test void shouldCreate() {
         when(pedidoService.crearPedido(any())).thenReturn(response());
-        var result = controller.crearPedido(null);
-        assertEquals(HttpStatus.CREATED, result.getStatusCode());
+        assertEquals(HttpStatus.CREATED, controller.crearPedido(null).getStatusCode());
     }
 
-    @Test
-    @DisplayName("Obtener pedido retorna 200")
-    void shouldReturn200OnGet() {
+    @Test void shouldGet() {
         when(pedidoService.obtenerPedido(1L)).thenReturn(response());
-        var result = controller.obtenerPedido(1L);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals(HttpStatus.OK, controller.obtenerPedido(1L).getStatusCode());
     }
 
-    @Test
-    @DisplayName("Cambiar estado retorna 200")
-    void shouldReturn200OnChangeEstado() {
+    @Test void shouldListByRestaurante() {
+        Page<PedidoResponse> page = new PageImpl<>(List.of(response()));
+        when(pedidoService.listarPorRestaurante(eq(1L), any())).thenReturn(page);
+        assertEquals(HttpStatus.OK, controller.listarPorRestaurante(1L, PageRequest.of(0, 10)).getStatusCode());
+    }
+
+    @Test void shouldListByCliente() {
+        Page<PedidoResponse> page = new PageImpl<>(List.of(response()));
+        when(pedidoService.listarPorCliente(eq("573001234567"), any())).thenReturn(page);
+        assertEquals(HttpStatus.OK, controller.listarPorCliente("573001234567", PageRequest.of(0, 10)).getStatusCode());
+    }
+
+    @Test void shouldChangeEstado() {
         when(pedidoService.cambiarEstado(1L, EstadoPedido.CONFIRMADO)).thenReturn(response());
-        var result = controller.cambiarEstado(1L, EstadoPedido.CONFIRMADO);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals(HttpStatus.OK, controller.cambiarEstado(1L, EstadoPedido.CONFIRMADO).getStatusCode());
     }
 }

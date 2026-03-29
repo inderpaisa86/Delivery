@@ -1,10 +1,12 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
+    url: jdbc:tc:postgresql:16-alpine:///delivery_test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
   jpa:
     hibernate:
       ddl-auto: create-drop
+  flyway:
+    enabled: false
 
 whatsapp:
   verify:
@@ -19,3 +21,5 @@ app:
     token: delivery-internal-token
   tracking:
     secret: tracking-secret-key
+  rate-limit:
+    webhook-requests-per-minute: 1000

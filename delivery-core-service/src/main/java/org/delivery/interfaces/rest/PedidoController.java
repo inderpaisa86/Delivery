@@ -8,6 +8,8 @@ import org.delivery.application.dto.PedidoRequest;
 import org.delivery.application.dto.PedidoResponse;
 import org.delivery.application.service.PedidoService;
 import org.delivery.domain.enums.EstadoPedido;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +32,20 @@ public class PedidoController {
     @Operation(summary = "Obtener pedido")
     public ResponseEntity<PedidoResponse> obtenerPedido(@PathVariable Long id) {
         return ResponseEntity.ok(pedidoService.obtenerPedido(id));
+    }
+
+    @GetMapping
+    @Operation(summary = "Listar pedidos por restaurante (paginado)")
+    public ResponseEntity<Page<PedidoResponse>> listarPorRestaurante(
+            @RequestParam Long restauranteId, Pageable pageable) {
+        return ResponseEntity.ok(pedidoService.listarPorRestaurante(restauranteId, pageable));
+    }
+
+    @GetMapping("/cliente/{telefono}")
+    @Operation(summary = "Historial de pedidos por cliente")
+    public ResponseEntity<Page<PedidoResponse>> listarPorCliente(
+            @PathVariable String telefono, Pageable pageable) {
+        return ResponseEntity.ok(pedidoService.listarPorCliente(telefono, pageable));
     }
 
     @PutMapping("/{id}/estado")
