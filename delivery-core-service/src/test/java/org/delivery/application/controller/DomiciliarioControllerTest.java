@@ -1,4 +1,4 @@
-package org.delivery.interfaces.rest;
+package org.delivery.application.controller;
 
 import org.delivery.application.dto.DomiciliarioRequest;
 import org.delivery.application.dto.DomiciliarioResponse;

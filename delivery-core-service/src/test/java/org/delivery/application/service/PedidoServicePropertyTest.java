@@ -5,7 +5,7 @@ import net.jqwik.api.constraints.*;
 import org.delivery.application.dto.DetallePedidoRequest;
 import org.delivery.application.dto.PedidoRequest;
 import org.delivery.application.dto.PedidoResponse;
-import org.delivery.application.port.WhatsAppPort;
+import org.delivery.application.port.IWhatsAppPort;
 import org.delivery.domain.entity.*;
 import org.delivery.infrastructure.persistence.repository.*;
 import org.mockito.Mockito;
@@ -24,12 +24,12 @@ import static org.mockito.Mockito.*;
  */
 class PedidoServicePropertyTest {
 
-    private final PedidoRepository pedidoRepository = mock(PedidoRepository.class);
-    private final ClienteRepository clienteRepository = mock(ClienteRepository.class);
-    private final ProductoRepository productoRepository = mock(ProductoRepository.class);
-    private final RestauranteRepository restauranteRepository = mock(RestauranteRepository.class);
+    private final IPedidoRepository pedidoRepository = mock(IPedidoRepository.class);
+    private final IClienteRepository clienteRepository = mock(IClienteRepository.class);
+    private final IProductoRepository productoRepository = mock(IProductoRepository.class);
+    private final IRestauranteRepository restauranteRepository = mock(IRestauranteRepository.class);
     private final PedidoStateMachine stateMachine = mock(PedidoStateMachine.class);
-    private final WhatsAppPort whatsAppPort = mock(WhatsAppPort.class);
+    private final IWhatsAppPort whatsAppPort = mock(IWhatsAppPort.class);
 
     private final PedidoService pedidoService = new PedidoService(
             pedidoRepository, clienteRepository, productoRepository,

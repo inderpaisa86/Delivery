@@ -1,7 +1,7 @@
 package org.delivery.application.service;
 
-import org.delivery.application.port.GeoPort;
-import org.delivery.application.port.WhatsAppPort;
+import org.delivery.application.port.IGeoPort;
+import org.delivery.application.port.IWhatsAppPort;
 import org.delivery.domain.entity.*;
 import org.delivery.domain.enums.EstadoAsignacion;
 import org.delivery.domain.enums.EstadoPedido;
@@ -24,11 +24,11 @@ import static org.mockito.Mockito.*;
 @DisplayName("AsignacionService")
 class AsignacionServiceTest {
 
-    @Mock PedidoRepository pedidoRepository;
-    @Mock DomiciliarioRepository domiciliarioRepository;
-    @Mock AsignacionDomicilioRepository asignacionRepository;
-    @Mock GeoPort geoPort;
-    @Mock WhatsAppPort whatsAppPort;
+    @Mock IPedidoRepository pedidoRepository;
+    @Mock IDomiciliarioRepository domiciliarioRepository;
+    @Mock IAsignacionDomicilioRepository asignacionRepository;
+    @Mock IGeoPort geoPort;
+    @Mock IWhatsAppPort whatsAppPort;
     @InjectMocks AsignacionService asignacionService;
 
     private Restaurante restaurante() {

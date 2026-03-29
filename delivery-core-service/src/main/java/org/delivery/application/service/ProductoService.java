@@ -5,8 +5,8 @@ import org.delivery.application.dto.ProductoRequest;
 import org.delivery.application.dto.ProductoResponse;
 import org.delivery.domain.entity.Producto;
 import org.delivery.domain.entity.Restaurante;
-import org.delivery.infrastructure.persistence.repository.ProductoRepository;
-import org.delivery.infrastructure.persistence.repository.RestauranteRepository;
+import org.delivery.infrastructure.persistence.repository.IProductoRepository;
+import org.delivery.infrastructure.persistence.repository.IRestauranteRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,8 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ProductoService {
 
-    private final ProductoRepository productoRepository;
-    private final RestauranteRepository restauranteRepository;
+    private final IProductoRepository productoRepository;
+    private final IRestauranteRepository restauranteRepository;
 
     @Transactional
     public ProductoResponse crear(ProductoRequest request) {

@@ -1,7 +1,7 @@
 package org.delivery.infrastructure.external.whatsapp;
 
 import lombok.extern.slf4j.Slf4j;
-import org.delivery.application.port.WhatsAppPort;
+import org.delivery.application.port.IWhatsAppPort;
 import org.delivery.domain.enums.EstadoPedido;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -11,7 +11,7 @@ import java.util.Map;
 
 @Component
 @Slf4j
-public class WhatsAppAdapter implements WhatsAppPort {
+public class WhatsAppAdapter implements IWhatsAppPort {
 
     private final WebClient webClient;
     private final String phoneNumberId;

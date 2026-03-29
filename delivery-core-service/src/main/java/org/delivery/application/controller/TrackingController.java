@@ -1,11 +1,10 @@
-package org.delivery.interfaces.rest;
+package org.delivery.application.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.delivery.application.dto.TrackingResponse;
 import org.delivery.application.dto.UbicacionResponse;
-import org.delivery.application.service.DomiciliarioService;
 import org.delivery.application.service.TrackingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 public class TrackingController {
 
     private final TrackingService trackingService;
-    private final DomiciliarioService domiciliarioService;
 
     @GetMapping("/track/{token}")
     @Operation(summary = "Tracking de pedido")
@@ -27,6 +25,6 @@ public class TrackingController {
     @GetMapping("/ubicacion/{domiciliarioId}")
     @Operation(summary = "Ubicación domiciliario")
     public ResponseEntity<UbicacionResponse> obtenerUbicacion(@PathVariable Long domiciliarioId) {
-        return ResponseEntity.ok(domiciliarioService.obtenerUbicacion(domiciliarioId));
+        return ResponseEntity.ok(trackingService.obtenerUbicacion(domiciliarioId));
     }
 }

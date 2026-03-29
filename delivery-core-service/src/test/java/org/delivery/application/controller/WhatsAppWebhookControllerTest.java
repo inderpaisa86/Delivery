@@ -1,4 +1,4 @@
-package org.delivery.interfaces.webhook;
+package org.delivery.application.controller;
 
 import org.delivery.Main;
 import org.delivery.application.service.WhatsAppMessageService;
@@ -8,9 +8,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -33,6 +38,9 @@ class WhatsAppWebhookControllerTest {
         @Test
         @DisplayName("Retorna challenge con token válido")
         void shouldReturnChallenge() throws Exception {
+            when(messageService.verificarWebhook("subscribe", "mi-token-secreto", "abc123"))
+                    .thenReturn(ResponseEntity.ok("abc123"));
+
             mockMvc.perform(get("/webhook")
                             .param("hub.mode", "subscribe")
                             .param("hub.verify_token", "mi-token-secreto")
@@ -44,6 +52,9 @@ class WhatsAppWebhookControllerTest {
         @Test
         @DisplayName("Retorna 403 con token inválido")
         void shouldReturn403WithBadToken() throws Exception {
+            when(messageService.verificarWebhook("subscribe", "wrong", "abc123"))
+                    .thenReturn(ResponseEntity.status(HttpStatus.FORBIDDEN).body("Token inválido"));
+
             mockMvc.perform(get("/webhook")
                             .param("hub.mode", "subscribe")
                             .param("hub.verify_token", "wrong")
@@ -69,6 +80,8 @@ class WhatsAppWebhookControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(payload))
                     .andExpect(status().isOk());
+
+            verify(messageService).procesarPayload(any());
         }
 
         @Test
@@ -78,6 +91,8 @@ class WhatsAppWebhookControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{}"))
                     .andExpect(status().isOk());
+
+            verify(messageService).procesarPayload(any());
         }
     }
 }

@@ -3,7 +3,7 @@ package org.delivery.application.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.delivery.application.dto.*;
-import org.delivery.application.port.WhatsAppPort;
+import org.delivery.application.port.IWhatsAppPort;
 import org.delivery.domain.entity.*;
 import org.delivery.domain.enums.EstadoPedido;
 import org.delivery.infrastructure.persistence.repository.*;
@@ -19,12 +19,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PedidoService {
 
-    private final PedidoRepository pedidoRepository;
-    private final ClienteRepository clienteRepository;
-    private final ProductoRepository productoRepository;
-    private final RestauranteRepository restauranteRepository;
+    private final IPedidoRepository pedidoRepository;
+    private final IClienteRepository clienteRepository;
+    private final IProductoRepository productoRepository;
+    private final IRestauranteRepository restauranteRepository;
     private final PedidoStateMachine stateMachine;
-    private final WhatsAppPort whatsAppPort;
+    private final IWhatsAppPort whatsAppPort;
 
     @Transactional
     public PedidoResponse crearPedido(PedidoRequest request) {

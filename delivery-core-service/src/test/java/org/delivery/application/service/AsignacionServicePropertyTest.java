@@ -3,8 +3,8 @@ package org.delivery.application.service;
 import net.jqwik.api.*;
 import net.jqwik.api.constraints.DoubleRange;
 import net.jqwik.api.constraints.Size;
-import org.delivery.application.port.GeoPort;
-import org.delivery.application.port.WhatsAppPort;
+import org.delivery.application.port.IGeoPort;
+import org.delivery.application.port.IWhatsAppPort;
 import org.delivery.domain.entity.*;
 import org.delivery.domain.enums.EstadoAsignacion;
 import org.delivery.domain.enums.EstadoPedido;
@@ -33,13 +33,13 @@ class AsignacionServicePropertyTest {
             @ForAll("listaDomiciliarios") List<Domiciliario> domiciliarios
     ) {
         // Setup mocks
-        PedidoRepository pedidoRepo = mock(PedidoRepository.class);
-        DomiciliarioRepository domiciliarioRepo = mock(DomiciliarioRepository.class);
-        AsignacionDomicilioRepository asignacionRepo = mock(AsignacionDomicilioRepository.class);
-        WhatsAppPort whatsAppPort = mock(WhatsAppPort.class);
+        IPedidoRepository pedidoRepo = mock(IPedidoRepository.class);
+        IDomiciliarioRepository domiciliarioRepo = mock(IDomiciliarioRepository.class);
+        IAsignacionDomicilioRepository asignacionRepo = mock(IAsignacionDomicilioRepository.class);
+        IWhatsAppPort whatsAppPort = mock(IWhatsAppPort.class);
 
         // Use real Haversine for distance calculation
-        GeoPort geoPort = haversine;
+        IGeoPort geoPort = haversine;
 
         AsignacionService service = new AsignacionService(
                 pedidoRepo, domiciliarioRepo, asignacionRepo, geoPort, whatsAppPort
@@ -84,11 +84,11 @@ class AsignacionServicePropertyTest {
             @ForAll("domiciliarioDisponible") Domiciliario domiciliario
     ) {
         // Setup mocks
-        PedidoRepository pedidoRepo = mock(PedidoRepository.class);
-        DomiciliarioRepository domiciliarioRepo = mock(DomiciliarioRepository.class);
-        AsignacionDomicilioRepository asignacionRepo = mock(AsignacionDomicilioRepository.class);
-        WhatsAppPort whatsAppPort = mock(WhatsAppPort.class);
-        GeoPort geoPort = haversine;
+        IPedidoRepository pedidoRepo = mock(IPedidoRepository.class);
+        IDomiciliarioRepository domiciliarioRepo = mock(IDomiciliarioRepository.class);
+        IAsignacionDomicilioRepository asignacionRepo = mock(IAsignacionDomicilioRepository.class);
+        IWhatsAppPort whatsAppPort = mock(IWhatsAppPort.class);
+        IGeoPort geoPort = haversine;
 
         AsignacionService service = new AsignacionService(
                 pedidoRepo, domiciliarioRepo, asignacionRepo, geoPort, whatsAppPort

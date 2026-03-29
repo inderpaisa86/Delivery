@@ -4,8 +4,8 @@ import org.delivery.application.dto.ProductoRequest;
 import org.delivery.application.dto.ProductoResponse;
 import org.delivery.domain.entity.Producto;
 import org.delivery.domain.entity.Restaurante;
-import org.delivery.infrastructure.persistence.repository.ProductoRepository;
-import org.delivery.infrastructure.persistence.repository.RestauranteRepository;
+import org.delivery.infrastructure.persistence.repository.IProductoRepository;
+import org.delivery.infrastructure.persistence.repository.IRestauranteRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,8 +28,8 @@ import static org.mockito.Mockito.*;
 @DisplayName("ProductoService")
 class ProductoServiceTest {
 
-    @Mock ProductoRepository productoRepository;
-    @Mock RestauranteRepository restauranteRepository;
+    @Mock IProductoRepository productoRepository;
+    @Mock IRestauranteRepository restauranteRepository;
     @InjectMocks ProductoService productoService;
 
     private Restaurante restaurante() {

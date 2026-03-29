@@ -1,8 +1,7 @@
-package org.delivery.interfaces.rest;
+package org.delivery.application.controller;
 
 import org.delivery.application.dto.TrackingResponse;
 import org.delivery.application.dto.UbicacionResponse;
-import org.delivery.application.service.DomiciliarioService;
 import org.delivery.application.service.TrackingService;
 import org.delivery.domain.enums.EstadoPedido;
 import org.junit.jupiter.api.DisplayName;
@@ -15,8 +14,7 @@ import static org.mockito.Mockito.*;
 class TrackingControllerTest {
 
     private final TrackingService trackingService = mock(TrackingService.class);
-    private final DomiciliarioService domiciliarioService = mock(DomiciliarioService.class);
-    private final TrackingController controller = new TrackingController(trackingService, domiciliarioService);
+    private final TrackingController controller = new TrackingController(trackingService);
 
     @Test
     @DisplayName("Obtener tracking retorna 200")
@@ -31,7 +29,7 @@ class TrackingControllerTest {
     @Test
     @DisplayName("Obtener ubicación retorna 200")
     void shouldReturnUbicacion() {
-        when(domiciliarioService.obtenerUbicacion(1L))
+        when(trackingService.obtenerUbicacion(1L))
                 .thenReturn(new UbicacionResponse(1L, "Carlos", 4.6, -74.0));
         var result = controller.obtenerUbicacion(1L);
         assertEquals(200, result.getStatusCode().value());

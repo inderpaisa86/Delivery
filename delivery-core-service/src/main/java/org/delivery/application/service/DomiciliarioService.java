@@ -8,8 +8,8 @@ import org.delivery.application.dto.UbicacionRequest;
 import org.delivery.application.dto.UbicacionResponse;
 import org.delivery.domain.entity.Domiciliario;
 import org.delivery.domain.entity.Restaurante;
-import org.delivery.infrastructure.persistence.repository.DomiciliarioRepository;
-import org.delivery.infrastructure.persistence.repository.RestauranteRepository;
+import org.delivery.infrastructure.persistence.repository.IDomiciliarioRepository;
+import org.delivery.infrastructure.persistence.repository.IRestauranteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,8 +20,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DomiciliarioService {
 
-    private final DomiciliarioRepository domiciliarioRepository;
-    private final RestauranteRepository restauranteRepository;
+    private final IDomiciliarioRepository domiciliarioRepository;
+    private final IRestauranteRepository restauranteRepository;
 
     @Transactional
     public DomiciliarioResponse crear(DomiciliarioRequest request) {

@@ -2,15 +2,15 @@ package org.delivery.application.service;
 
 import org.delivery.application.dto.PedidoResponse;
 import org.delivery.application.dto.WhatsAppMessage;
-import org.delivery.application.port.WhatsAppPort;
+import org.delivery.application.port.IWhatsAppPort;
 import org.delivery.domain.entity.Producto;
 import org.delivery.domain.entity.Restaurante;
 import org.delivery.domain.enums.EstadoPedido;
-import org.delivery.infrastructure.persistence.repository.ProductoRepository;
+import org.delivery.infrastructure.persistence.repository.IProductoRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -26,11 +26,17 @@ import static org.mockito.Mockito.*;
 @DisplayName("WhatsAppMessageService")
 class WhatsAppMessageServiceTest {
 
-    @Mock ProductoRepository productoRepository;
+    @Mock IProductoRepository productoRepository;
     @Mock PedidoService pedidoService;
     @Mock RestauranteService restauranteService;
-    @Mock WhatsAppPort whatsAppPort;
-    @InjectMocks WhatsAppMessageService service;
+    @Mock IWhatsAppPort whatsAppPort;
+    WhatsAppMessageService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new WhatsAppMessageService(
+                productoRepository, pedidoService, restauranteService, whatsAppPort, "test-verify-token");
+    }
 
     private Restaurante restaurante() {
         Restaurante r = new Restaurante(); r.setId(1L); r.setNombre("Test"); return r;

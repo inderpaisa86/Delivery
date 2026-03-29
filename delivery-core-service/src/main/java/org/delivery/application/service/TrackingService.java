@@ -2,10 +2,11 @@ package org.delivery.application.service;
 
 import lombok.RequiredArgsConstructor;
 import org.delivery.application.dto.TrackingResponse;
+import org.delivery.application.dto.UbicacionResponse;
 import org.delivery.domain.entity.Domiciliario;
 import org.delivery.domain.entity.Pedido;
-import org.delivery.infrastructure.persistence.repository.AsignacionDomicilioRepository;
-import org.delivery.infrastructure.persistence.repository.PedidoRepository;
+import org.delivery.infrastructure.persistence.repository.IAsignacionDomicilioRepository;
+import org.delivery.infrastructure.persistence.repository.IPedidoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,8 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TrackingService {
 
-    private final PedidoRepository pedidoRepository;
-    private final AsignacionDomicilioRepository asignacionRepository;
+    private final IPedidoRepository pedidoRepository;
+    private final IAsignacionDomicilioRepository asignacionRepository;
+    private final DomiciliarioService domiciliarioService;
 
     @Transactional(readOnly = true)
     public TrackingResponse obtenerTracking(String token) {
@@ -37,5 +39,10 @@ public class TrackingService {
                 pedido.getId(), pedido.getEstado(), pedido.getDireccion(),
                 pedido.getLat(), pedido.getLng(),
                 domLat, domLng, domNombre);
+    }
+
+    @Transactional(readOnly = true)
+    public UbicacionResponse obtenerUbicacion(Long domiciliarioId) {
+        return domiciliarioService.obtenerUbicacion(domiciliarioId);
     }
 }

@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface PedidoRepository extends JpaRepository<Pedido, Long> {
+public interface IPedidoRepository extends JpaRepository<Pedido, Long> {
     Optional<Pedido> findByTrackingToken(String trackingToken);
     Page<Pedido> findByRestauranteId(Long restauranteId, Pageable pageable);
     Page<Pedido> findByClienteTelefono(String telefono, Pageable pageable);

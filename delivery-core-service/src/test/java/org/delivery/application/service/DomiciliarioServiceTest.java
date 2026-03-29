@@ -6,8 +6,8 @@ import org.delivery.application.dto.UbicacionRequest;
 import org.delivery.application.dto.UbicacionResponse;
 import org.delivery.domain.entity.Domiciliario;
 import org.delivery.domain.entity.Restaurante;
-import org.delivery.infrastructure.persistence.repository.DomiciliarioRepository;
-import org.delivery.infrastructure.persistence.repository.RestauranteRepository;
+import org.delivery.infrastructure.persistence.repository.IDomiciliarioRepository;
+import org.delivery.infrastructure.persistence.repository.IRestauranteRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,8 +26,8 @@ import static org.mockito.Mockito.*;
 @DisplayName("DomiciliarioService")
 class DomiciliarioServiceTest {
 
-    @Mock DomiciliarioRepository domiciliarioRepository;
-    @Mock RestauranteRepository restauranteRepository;
+    @Mock IDomiciliarioRepository domiciliarioRepository;
+    @Mock IRestauranteRepository restauranteRepository;
     @InjectMocks DomiciliarioService domiciliarioService;
 
     private Restaurante restaurante() { Restaurante r = new Restaurante(); r.setId(1L); return r; }

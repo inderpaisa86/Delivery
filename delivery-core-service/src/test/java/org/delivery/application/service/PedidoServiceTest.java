@@ -1,7 +1,7 @@
 package org.delivery.application.service;
 
 import org.delivery.application.dto.*;
-import org.delivery.application.port.WhatsAppPort;
+import org.delivery.application.port.IWhatsAppPort;
 import org.delivery.domain.entity.*;
 import org.delivery.domain.enums.EstadoPedido;
 import org.delivery.infrastructure.persistence.repository.*;
@@ -24,12 +24,12 @@ import static org.mockito.Mockito.*;
 @DisplayName("PedidoService")
 class PedidoServiceTest {
 
-    @Mock PedidoRepository pedidoRepository;
-    @Mock ClienteRepository clienteRepository;
-    @Mock ProductoRepository productoRepository;
-    @Mock RestauranteRepository restauranteRepository;
+    @Mock IPedidoRepository pedidoRepository;
+    @Mock IClienteRepository clienteRepository;
+    @Mock IProductoRepository productoRepository;
+    @Mock IRestauranteRepository restauranteRepository;
     @Mock PedidoStateMachine stateMachine;
-    @Mock WhatsAppPort whatsAppPort;
+    @Mock IWhatsAppPort whatsAppPort;
     @InjectMocks PedidoService pedidoService;
 
     private Restaurante restaurante() {

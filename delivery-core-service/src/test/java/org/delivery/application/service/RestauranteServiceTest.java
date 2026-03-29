@@ -3,7 +3,7 @@ package org.delivery.application.service;
 import org.delivery.application.dto.RestauranteRequest;
 import org.delivery.application.dto.RestauranteResponse;
 import org.delivery.domain.entity.Restaurante;
-import org.delivery.infrastructure.persistence.repository.RestauranteRepository;
+import org.delivery.infrastructure.persistence.repository.IRestauranteRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("RestauranteService")
 class RestauranteServiceTest {
 
-    @Mock RestauranteRepository restauranteRepository;
+    @Mock IRestauranteRepository restauranteRepository;
     @InjectMocks RestauranteService restauranteService;
 
     private Restaurante restaurante() {

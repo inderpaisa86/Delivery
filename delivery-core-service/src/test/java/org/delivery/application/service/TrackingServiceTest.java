@@ -3,8 +3,8 @@ package org.delivery.application.service;
 import org.delivery.application.dto.TrackingResponse;
 import org.delivery.domain.entity.*;
 import org.delivery.domain.enums.EstadoPedido;
-import org.delivery.infrastructure.persistence.repository.AsignacionDomicilioRepository;
-import org.delivery.infrastructure.persistence.repository.PedidoRepository;
+import org.delivery.infrastructure.persistence.repository.IAsignacionDomicilioRepository;
+import org.delivery.infrastructure.persistence.repository.IPedidoRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,8 +21,9 @@ import static org.mockito.Mockito.*;
 @DisplayName("TrackingService")
 class TrackingServiceTest {
 
-    @Mock PedidoRepository pedidoRepository;
-    @Mock AsignacionDomicilioRepository asignacionRepository;
+    @Mock IPedidoRepository pedidoRepository;
+    @Mock IAsignacionDomicilioRepository asignacionRepository;
+    @Mock DomiciliarioService domiciliarioService;
     @InjectMocks TrackingService trackingService;
 
     @Test

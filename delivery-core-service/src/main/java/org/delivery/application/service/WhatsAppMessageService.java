@@ -6,27 +6,63 @@ import org.delivery.application.dto.DetallePedidoRequest;
 import org.delivery.application.dto.PedidoRequest;
 import org.delivery.application.dto.PedidoResponse;
 import org.delivery.application.dto.WhatsAppMessage;
-import org.delivery.application.port.WhatsAppPort;
+import org.delivery.application.port.IWhatsAppPort;
 import org.delivery.domain.entity.Producto;
 import org.delivery.domain.entity.Restaurante;
-import org.delivery.infrastructure.persistence.repository.ProductoRepository;
+import org.delivery.infrastructure.external.whatsapp.WhatsAppPayloadParser;
+import org.delivery.infrastructure.persistence.repository.IProductoRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class WhatsAppMessageService {
 
     private static final int MAX_INPUT_LENGTH = 500;
 
-    private final ProductoRepository productoRepository;
+    private final IProductoRepository productoRepository;
     private final PedidoService pedidoService;
     private final RestauranteService restauranteService;
-    private final WhatsAppPort whatsAppPort;
+    private final IWhatsAppPort whatsAppPort;
+    private final String verifyToken;
+
+    public WhatsAppMessageService(
+            IProductoRepository productoRepository,
+            PedidoService pedidoService,
+            RestauranteService restauranteService,
+            IWhatsAppPort whatsAppPort,
+            @Value("${whatsapp.verify.token}") String verifyToken) {
+        this.productoRepository = productoRepository;
+        this.pedidoService = pedidoService;
+        this.restauranteService = restauranteService;
+        this.whatsAppPort = whatsAppPort;
+        this.verifyToken = verifyToken;
+    }
+
+    public ResponseEntity<String> verificarWebhook(String mode, String token, String challenge) {
+        if ("subscribe".equals(mode) && verifyToken.equals(token)) {
+            log.info("Webhook verificado correctamente");
+            return ResponseEntity.ok(challenge);
+        }
+        log.warn("Verificación fallida - token inválido");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Token inválido");
+    }
+
+    public void procesarPayload(Map<String, Object> payload) {
+        try {
+            List<WhatsAppMessage> messages = WhatsAppPayloadParser.extractMessages(payload);
+            messages.forEach(this::procesarMensaje);
+        } catch (Exception e) {
+            log.error("Error procesando mensaje: {}", e.getMessage());
+        }
+    }
 
     public void procesarMensaje(WhatsAppMessage message) {
         log.info("Mensaje de [{}]: {}", message.from(), message.body());

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.delivery.application.dto.RestauranteRequest;
 import org.delivery.application.dto.RestauranteResponse;
 import org.delivery.domain.entity.Restaurante;
-import org.delivery.infrastructure.persistence.repository.RestauranteRepository;
+import org.delivery.infrastructure.persistence.repository.IRestauranteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RestauranteService {
 
-    private final RestauranteRepository restauranteRepository;
+    private final IRestauranteRepository restauranteRepository;
 
     @Transactional
     public RestauranteResponse crear(RestauranteRequest request) {

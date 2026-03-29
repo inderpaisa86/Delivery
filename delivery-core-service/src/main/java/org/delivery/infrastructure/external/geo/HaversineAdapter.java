@@ -1,13 +1,13 @@
 package org.delivery.infrastructure.external.geo;
 
-import org.delivery.application.port.GeoPort;
+import org.delivery.application.port.IGeoPort;
 import org.springframework.stereotype.Component;
 
 /**
  * Implementación del cálculo de distancia usando la fórmula Haversine.
  */
 @Component
-public class HaversineAdapter implements GeoPort {
+public class HaversineAdapter implements IGeoPort {
 
     private static final double RADIO_TIERRA_KM = 6371.0;
 

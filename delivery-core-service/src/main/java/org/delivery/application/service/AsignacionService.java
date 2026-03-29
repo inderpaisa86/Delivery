@@ -2,16 +2,16 @@ package org.delivery.application.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.delivery.application.port.GeoPort;
-import org.delivery.application.port.WhatsAppPort;
+import org.delivery.application.port.IGeoPort;
+import org.delivery.application.port.IWhatsAppPort;
 import org.delivery.domain.entity.AsignacionDomicilio;
 import org.delivery.domain.entity.Domiciliario;
 import org.delivery.domain.entity.Pedido;
 import org.delivery.domain.enums.EstadoAsignacion;
 import org.delivery.domain.enums.EstadoPedido;
-import org.delivery.infrastructure.persistence.repository.AsignacionDomicilioRepository;
-import org.delivery.infrastructure.persistence.repository.DomiciliarioRepository;
-import org.delivery.infrastructure.persistence.repository.PedidoRepository;
+import org.delivery.infrastructure.persistence.repository.IAsignacionDomicilioRepository;
+import org.delivery.infrastructure.persistence.repository.IDomiciliarioRepository;
+import org.delivery.infrastructure.persistence.repository.IPedidoRepository;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,11 +24,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AsignacionService {
 
-    private final PedidoRepository pedidoRepository;
-    private final DomiciliarioRepository domiciliarioRepository;
-    private final AsignacionDomicilioRepository asignacionRepository;
-    private final GeoPort geoPort;
-    private final WhatsAppPort whatsAppPort;
+    private final IPedidoRepository pedidoRepository;
+    private final IDomiciliarioRepository domiciliarioRepository;
+    private final IAsignacionDomicilioRepository asignacionRepository;
+    private final IGeoPort geoPort;
+    private final IWhatsAppPort whatsAppPort;
 
     @Async
     @Transactional
