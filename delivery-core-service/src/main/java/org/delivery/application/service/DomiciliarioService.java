@@ -1,29 +1,22 @@
 package org.delivery.application.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.delivery.application.dto.UbicacionRequest;
 import org.delivery.application.dto.UbicacionResponse;
 import org.delivery.domain.entity.Domiciliario;
 import org.delivery.infrastructure.persistence.repository.DomiciliarioRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * Caso de uso: gestión de domiciliarios y su ubicación.
- */
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class DomiciliarioService {
 
-    private static final Logger log = LoggerFactory.getLogger(DomiciliarioService.class);
-
     private final DomiciliarioRepository domiciliarioRepository;
-
-    public DomiciliarioService(DomiciliarioRepository domiciliarioRepository) {
-        this.domiciliarioRepository = domiciliarioRepository;
-    }
 
     @Transactional
     public void actualizarUbicacion(UbicacionRequest request) {

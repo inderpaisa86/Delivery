@@ -1,8 +1,7 @@
 package org.delivery.application.service;
 
+import org.delivery.domain.entity.Pedido;
 import org.delivery.domain.enums.EstadoPedido;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,53 +9,59 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PedidoStateMachine")
 class PedidoStateMachineTest {
 
-    @Mock
-    private AsignacionService asignacionService;
+    @Mock AsignacionService asignacionService;
+    @InjectMocks PedidoStateMachine stateMachine;
 
-    @InjectMocks
-    private PedidoStateMachine stateMachine;
-
-    @Test
-    @DisplayName("Permite NUEVO -> CONFIRMADO")
-    void shouldAllowNuevoToConfirmado() {
-        assertDoesNotThrow(() ->
-                stateMachine.validarTransicion(EstadoPedido.NUEVO, EstadoPedido.CONFIRMADO));
+    private Pedido pedido(EstadoPedido estado) {
+        Pedido p = new Pedido(); p.setId(1L); p.setEstado(estado); return p;
     }
 
     @Test
-    @DisplayName("Permite cancelar desde cualquier estado activo")
-    void shouldAllowCancelFromActiveStates() {
-        assertDoesNotThrow(() ->
-                stateMachine.validarTransicion(EstadoPedido.NUEVO, EstadoPedido.CANCELADO));
-        assertDoesNotThrow(() ->
-                stateMachine.validarTransicion(EstadoPedido.CONFIRMADO, EstadoPedido.CANCELADO));
-        assertDoesNotThrow(() ->
-                stateMachine.validarTransicion(EstadoPedido.PREPARANDO, EstadoPedido.CANCELADO));
+    @DisplayName("Cambia estado y ejecuta acción LISTO → asignar domiciliario")
+    void shouldAssignOnListo() {
+        Pedido p = pedido(EstadoPedido.PREPARANDO);
+        stateMachine.cambiarEstado(p, EstadoPedido.LISTO);
+        assertEquals(EstadoPedido.LISTO, p.getEstado());
+        verify(asignacionService).asignarDomiciliario(1L);
     }
 
     @Test
-    @DisplayName("Rechaza NUEVO -> ENTREGADO")
-    void shouldRejectNuevoToEntregado() {
-        assertThrows(IllegalStateException.class, () ->
-                stateMachine.validarTransicion(EstadoPedido.NUEVO, EstadoPedido.ENTREGADO));
+    @DisplayName("Libera domiciliario en ENTREGADO")
+    void shouldReleaseOnEntregado() {
+        Pedido p = pedido(EstadoPedido.EN_CAMINO);
+        stateMachine.cambiarEstado(p, EstadoPedido.ENTREGADO);
+        verify(asignacionService).liberarDomiciliario(1L);
     }
 
     @Test
-    @DisplayName("Rechaza transición desde ENTREGADO")
-    void shouldRejectFromEntregado() {
-        assertThrows(IllegalStateException.class, () ->
-                stateMachine.validarTransicion(EstadoPedido.ENTREGADO, EstadoPedido.NUEVO));
+    @DisplayName("Libera domiciliario en CANCELADO")
+    void shouldReleaseOnCancelado() {
+        Pedido p = pedido(EstadoPedido.CONFIRMADO);
+        stateMachine.cambiarEstado(p, EstadoPedido.CANCELADO);
+        verify(asignacionService).liberarDomiciliario(1L);
     }
 
     @Test
-    @DisplayName("Rechaza transición desde CANCELADO")
-    void shouldRejectFromCancelado() {
-        assertThrows(IllegalStateException.class, () ->
-                stateMachine.validarTransicion(EstadoPedido.CANCELADO, EstadoPedido.NUEVO));
+    @DisplayName("No ejecuta acción en CONFIRMADO")
+    void shouldNotActOnConfirmado() {
+        Pedido p = pedido(EstadoPedido.NUEVO);
+        stateMachine.cambiarEstado(p, EstadoPedido.CONFIRMADO);
+        verify(asignacionService, never()).asignarDomiciliario(anyLong());
+        verify(asignacionService, never()).liberarDomiciliario(anyLong());
+    }
+
+    @Test
+    @DisplayName("Rechaza transición inválida")
+    void shouldRejectInvalidTransition() {
+        assertThrows(IllegalStateException.class,
+                () -> stateMachine.validarTransicion(EstadoPedido.NUEVO, EstadoPedido.ENTREGADO));
     }
 
     @Test
@@ -69,5 +74,14 @@ class PedidoStateMachineTest {
             stateMachine.validarTransicion(EstadoPedido.LISTO, EstadoPedido.EN_CAMINO);
             stateMachine.validarTransicion(EstadoPedido.EN_CAMINO, EstadoPedido.ENTREGADO);
         });
+    }
+
+    @Test
+    @DisplayName("Rechaza desde ENTREGADO y CANCELADO")
+    void shouldRejectFromTerminalStates() {
+        assertThrows(IllegalStateException.class,
+                () -> stateMachine.validarTransicion(EstadoPedido.ENTREGADO, EstadoPedido.NUEVO));
+        assertThrows(IllegalStateException.class,
+                () -> stateMachine.validarTransicion(EstadoPedido.CANCELADO, EstadoPedido.NUEVO));
     }
 }

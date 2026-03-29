@@ -1,23 +1,17 @@
 package org.delivery.infrastructure.external.whatsapp;
 
-import java.util.Map;
-
+import lombok.extern.slf4j.Slf4j;
 import org.delivery.application.port.WhatsAppPort;
 import org.delivery.domain.enums.EstadoPedido;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-/**
- * Adapter que implementa la comunicación con WhatsApp Business API.
- * Aislado en infrastructure para no contaminar la capa de application.
- */
-@Component
-public class WhatsAppAdapter implements WhatsAppPort {
+import java.util.Map;
 
-    private static final Logger log = LoggerFactory.getLogger(WhatsAppAdapter.class);
+@Component
+@Slf4j
+public class WhatsAppAdapter implements WhatsAppPort {
 
     private final WebClient webClient;
     private final String phoneNumberId;

@@ -1,5 +1,6 @@
 package org.delivery.application.service;
 
+import lombok.RequiredArgsConstructor;
 import org.delivery.application.dto.TrackingResponse;
 import org.delivery.domain.entity.Domiciliario;
 import org.delivery.domain.entity.Pedido;
@@ -8,20 +9,12 @@ import org.delivery.infrastructure.persistence.repository.PedidoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Caso de uso: tracking público de pedidos en tiempo real.
- */
 @Service
+@RequiredArgsConstructor
 public class TrackingService {
 
     private final PedidoRepository pedidoRepository;
     private final AsignacionDomicilioRepository asignacionRepository;
-
-    public TrackingService(PedidoRepository pedidoRepository,
-                           AsignacionDomicilioRepository asignacionRepository) {
-        this.pedidoRepository = pedidoRepository;
-        this.asignacionRepository = asignacionRepository;
-    }
 
     @Transactional(readOnly = true)
     public TrackingResponse obtenerTracking(String token) {
@@ -41,11 +34,8 @@ public class TrackingService {
         }
 
         return new TrackingResponse(
-                pedido.getId(),
-                pedido.getEstado(),
-                pedido.getDireccion(),
-                pedido.getLat(),
-                pedido.getLng(),
+                pedido.getId(), pedido.getEstado(), pedido.getDireccion(),
+                pedido.getLat(), pedido.getLng(),
                 domLat, domLng, domNombre);
     }
 }

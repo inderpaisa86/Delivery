@@ -1,8 +1,7 @@
 package org.delivery.application.service;
 
-import java.util.Comparator;
-import java.util.List;
-
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.delivery.application.port.GeoPort;
 import org.delivery.application.port.WhatsAppPort;
 import org.delivery.domain.entity.AsignacionDomicilio;
@@ -13,20 +12,17 @@ import org.delivery.domain.enums.EstadoPedido;
 import org.delivery.infrastructure.persistence.repository.AsignacionDomicilioRepository;
 import org.delivery.infrastructure.persistence.repository.DomiciliarioRepository;
 import org.delivery.infrastructure.persistence.repository.PedidoRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Caso de uso: asignación automática de domiciliarios.
- * Se ejecuta de forma asíncrona para no bloquear el cambio de estado.
- */
-@Service
-public class AsignacionService {
+import java.util.Comparator;
+import java.util.List;
 
-    private static final Logger log = LoggerFactory.getLogger(AsignacionService.class);
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class AsignacionService {
 
     private final PedidoRepository pedidoRepository;
     private final DomiciliarioRepository domiciliarioRepository;
@@ -34,22 +30,6 @@ public class AsignacionService {
     private final GeoPort geoPort;
     private final WhatsAppPort whatsAppPort;
 
-    public AsignacionService(PedidoRepository pedidoRepository,
-                             DomiciliarioRepository domiciliarioRepository,
-                             AsignacionDomicilioRepository asignacionRepository,
-                             GeoPort geoPort,
-                             WhatsAppPort whatsAppPort) {
-        this.pedidoRepository = pedidoRepository;
-        this.domiciliarioRepository = domiciliarioRepository;
-        this.asignacionRepository = asignacionRepository;
-        this.geoPort = geoPort;
-        this.whatsAppPort = whatsAppPort;
-    }
-
-    /**
-     * Busca el domiciliario disponible más cercano al pedido y lo asigna.
-     * Se ejecuta de forma asíncrona para no bloquear el flujo principal.
-     */
     @Async
     @Transactional
     public void asignarDomiciliario(Long pedidoId) {
@@ -83,15 +63,11 @@ public class AsignacionService {
                                 d.getLat(), d.getLng())))
                 .orElseThrow();
 
-        // Crear asignación
-        AsignacionDomicilio asignacion = new AsignacionDomicilio(pedido, masCercano);
-        asignacionRepository.save(asignacion);
+        asignacionRepository.save(new AsignacionDomicilio(pedido, masCercano));
 
-        // Marcar domiciliario como ocupado
         masCercano.setDisponible(false);
         domiciliarioRepository.save(masCercano);
 
-        // Transicionar pedido a EN_CAMINO
         pedido.setEstado(EstadoPedido.EN_CAMINO);
         pedidoRepository.save(pedido);
 
@@ -106,9 +82,6 @@ public class AsignacionService {
                 pedido.getCliente().getTelefono(), pedidoId, EstadoPedido.EN_CAMINO);
     }
 
-    /**
-     * Libera al domiciliario asignado a un pedido (cuando se entrega o cancela).
-     */
     @Transactional
     public void liberarDomiciliario(Long pedidoId) {
         asignacionRepository.findByPedidoId(pedidoId).ifPresent(asignacion -> {

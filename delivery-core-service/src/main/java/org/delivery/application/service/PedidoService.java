@@ -1,24 +1,21 @@
 package org.delivery.application.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.delivery.application.dto.*;
 import org.delivery.application.port.WhatsAppPort;
 import org.delivery.domain.entity.*;
 import org.delivery.domain.enums.EstadoPedido;
 import org.delivery.infrastructure.persistence.repository.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-/**
- * Caso de uso principal: gestión del ciclo de vida de pedidos.
- */
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class PedidoService {
-
-    private static final Logger log = LoggerFactory.getLogger(PedidoService.class);
 
     private final PedidoRepository pedidoRepository;
     private final ClienteRepository clienteRepository;
@@ -26,20 +23,6 @@ public class PedidoService {
     private final RestauranteRepository restauranteRepository;
     private final PedidoStateMachine stateMachine;
     private final WhatsAppPort whatsAppPort;
-
-    public PedidoService(PedidoRepository pedidoRepository,
-                         ClienteRepository clienteRepository,
-                         ProductoRepository productoRepository,
-                         RestauranteRepository restauranteRepository,
-                         PedidoStateMachine stateMachine,
-                         WhatsAppPort whatsAppPort) {
-        this.pedidoRepository = pedidoRepository;
-        this.clienteRepository = clienteRepository;
-        this.productoRepository = productoRepository;
-        this.restauranteRepository = restauranteRepository;
-        this.stateMachine = stateMachine;
-        this.whatsAppPort = whatsAppPort;
-    }
 
     @Transactional
     public PedidoResponse crearPedido(PedidoRequest request) {
@@ -49,20 +32,22 @@ public class PedidoService {
 
         Cliente cliente = clienteRepository
                 .findByTelefonoAndRestauranteId(request.telefono(), restaurante.getId())
-                .orElseGet(() -> {
-                    Cliente nuevo = new Cliente(
-                            request.telefono(), request.nombre(),
-                            request.direccion(), restaurante);
-                    return clienteRepository.save(nuevo);
-                });
+                .orElseGet(() -> clienteRepository.save(
+                        Cliente.builder()
+                                .telefono(request.telefono())
+                                .nombre(request.nombre())
+                                .direccion(request.direccion())
+                                .restaurante(restaurante)
+                                .build()));
 
-        Pedido pedido = new Pedido();
-        pedido.setCliente(cliente);
-        pedido.setRestaurante(restaurante);
-        pedido.setDireccion(request.direccion());
-        pedido.setLat(request.lat());
-        pedido.setLng(request.lng());
-        pedido.setTrackingToken(UUID.randomUUID().toString());
+        Pedido pedido = Pedido.builder()
+                .cliente(cliente)
+                .restaurante(restaurante)
+                .direccion(request.direccion())
+                .lat(request.lat())
+                .lng(request.lng())
+                .trackingToken(UUID.randomUUID().toString())
+                .build();
 
         for (DetallePedidoRequest detReq : request.detalles()) {
             Producto producto = productoRepository.findById(detReq.productoId())

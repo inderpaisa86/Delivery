@@ -1,27 +1,18 @@
 package org.delivery.application.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.delivery.domain.entity.Pedido;
+import org.delivery.domain.enums.EstadoPedido;
+import org.springframework.stereotype.Component;
+
 import java.util.Map;
 import java.util.Set;
 
-import org.delivery.domain.entity.Pedido;
-import org.delivery.domain.enums.EstadoPedido;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
-/**
- * Máquina de estados centralizada para pedidos.
- * Valida transiciones y dispara acciones automáticas según el nuevo estado:
- *
- * - LISTO       → asignar domiciliario automáticamente (async)
- * - EN_CAMINO   → notificar cliente (vía WhatsAppPort en PedidoService)
- * - ENTREGADO   → liberar domiciliario, cerrar pedido
- * - CANCELADO   → liberar domiciliario si estaba asignado
- */
 @Component
+@Slf4j
+@RequiredArgsConstructor
 public class PedidoStateMachine {
-
-    private static final Logger log = LoggerFactory.getLogger(PedidoStateMachine.class);
 
     private static final Map<EstadoPedido, Set<EstadoPedido>> TRANSICIONES = Map.of(
             EstadoPedido.NUEVO, Set.of(EstadoPedido.CONFIRMADO, EstadoPedido.CANCELADO),
@@ -35,15 +26,6 @@ public class PedidoStateMachine {
 
     private final AsignacionService asignacionService;
 
-    public PedidoStateMachine(AsignacionService asignacionService) {
-        this.asignacionService = asignacionService;
-    }
-
-    /**
-     * Cambia el estado del pedido, valida la transición y ejecuta acciones automáticas.
-     *
-     * @throws IllegalStateException si la transición no es válida
-     */
     public EstadoPedido cambiarEstado(Pedido pedido, EstadoPedido nuevoEstado) {
         EstadoPedido actual = pedido.getEstado();
         validarTransicion(actual, nuevoEstado);
