@@ -92,6 +92,9 @@ class PedidoServiceTest {
         assertNotNull(response);
         assertEquals(1L, response.id());
         assertEquals(BigDecimal.valueOf(30000), response.total());
+        assertNotNull(response.trackingToken(), "trackingToken debe ser generado");
+        assertDoesNotThrow(() -> java.util.UUID.fromString(response.trackingToken()),
+                "trackingToken debe ser un UUID válido");
         verify(whatsAppPort).notificarCambioEstado("573001234567", 1L, EstadoPedido.NUEVO);
     }
 
@@ -190,5 +193,32 @@ class PedidoServiceTest {
         when(pedidoRepository.findById(99L)).thenReturn(Optional.empty());
         assertThrows(IllegalArgumentException.class,
                 () -> pedidoService.cambiarEstado(99L, EstadoPedido.CONFIRMADO));
+    }
+
+    @Test
+    @DisplayName("toResponse mapea correctamente todos los campos del Pedido a PedidoResponse")
+    void shouldMapPedidoToResponseCorrectly() {
+        Restaurante r = restaurante();
+        Cliente c = cliente(r);
+        Pedido p = pedido(c, r);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(p));
+
+        PedidoResponse response = pedidoService.obtenerPedido(1L);
+
+        assertEquals(1L, response.id());
+        assertEquals(1L, response.restauranteId());
+        assertEquals("Test Restaurant", response.restauranteNombre());
+        assertEquals("573001234567", response.clienteTelefono());
+        assertEquals("Juan", response.clienteNombre());
+        assertEquals("Calle 100", response.direccion());
+        assertEquals(EstadoPedido.NUEVO, response.estado());
+        assertEquals(BigDecimal.valueOf(30000), response.total());
+        assertEquals("token-123", response.trackingToken());
+        assertNotNull(response.fecha());
+        assertNotNull(response.detalles());
+        assertEquals(1, response.detalles().size());
+        assertEquals("hamburguesa", response.detalles().get(0).producto());
+        assertEquals(2, response.detalles().get(0).cantidad());
+        assertEquals(BigDecimal.valueOf(15000), response.detalles().get(0).precio());
     }
 }
