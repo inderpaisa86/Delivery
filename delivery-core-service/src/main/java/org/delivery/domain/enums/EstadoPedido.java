@@ -1,7 +1,7 @@
 package org.delivery.domain.enums;
 
 /**
- * Estados posibles de un pedido en su ciclo de vida.
+ * Ciclo de vida de un pedido.
  */
 public enum EstadoPedido {
     NUEVO,

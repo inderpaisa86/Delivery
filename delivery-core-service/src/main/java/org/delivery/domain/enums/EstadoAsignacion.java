@@ -1,7 +1,7 @@
 package org.delivery.domain.enums;
 
 /**
- * Estados de la asignación de un domiciliario a un pedido.
+ * Estados de la asignación domiciliario-pedido.
  */
 public enum EstadoAsignacion {
     ASIGNADO,
