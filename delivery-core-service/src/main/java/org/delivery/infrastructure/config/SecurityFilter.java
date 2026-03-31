@@ -16,8 +16,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * Filtro de seguridad por token para endpoints internos.
- * Endpoints públicos: /webhook, /track/, /swagger-ui, /v3/api-docs
+ * Filtro de seguridad que acepta:
+ * 1. JWT válido (Bearer eyJ...)
+ * 2. Token estático legacy (Bearer delivery-internal-token)
+ * Endpoints públicos no requieren autenticación.
  */
 @Component
 @Order(1)
@@ -30,9 +32,13 @@ public class SecurityFilter implements Filter {
     );
 
     private final String apiToken;
+    private final JwtService jwtService;
 
-    public SecurityFilter(@Value("${app.api.token}") String apiToken) {
+    public SecurityFilter(
+            @Value("${app.api.token}") String apiToken,
+            JwtService jwtService) {
         this.apiToken = apiToken;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -48,9 +54,20 @@ public class SecurityFilter implements Filter {
         }
 
         String authHeader = httpRequest.getHeader("Authorization");
-        if (authHeader != null && authHeader.equals("Bearer " + apiToken)) {
-            chain.doFilter(request, response);
-            return;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+
+            // Aceptar token estático legacy
+            if (token.equals(apiToken)) {
+                chain.doFilter(request, response);
+                return;
+            }
+
+            // Validar JWT
+            if (jwtService.isValid(token)) {
+                chain.doFilter(request, response);
+                return;
+            }
         }
 
         HttpServletResponse httpResponse = (HttpServletResponse) response;

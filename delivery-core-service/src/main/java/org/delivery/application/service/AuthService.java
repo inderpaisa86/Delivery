@@ -4,8 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.delivery.application.dto.LoginRequest;
 import org.delivery.application.dto.LoginResponse;
 import org.delivery.domain.entity.Usuario;
+import org.delivery.infrastructure.config.JwtService;
+import org.delivery.infrastructure.config.PasswordService;
 import org.delivery.infrastructure.persistence.repository.IUsuarioRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,30 +14,31 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final IUsuarioRepository usuarioRepository;
-
-    @Value("${app.api.token}")
-    private String apiToken;
+    private final JwtService jwtService;
+    private final PasswordService passwordService;
 
     public LoginResponse login(LoginRequest request) {
         Usuario usuario = usuarioRepository.findByUsernameAndActivoTrue(request.username())
                 .orElseThrow(() -> new IllegalArgumentException("Usuario o contraseña incorrectos"));
 
-        if (!usuario.getPassword().equals(request.password())) {
+        if (!passwordService.matches(request.password(), usuario.getPassword())) {
             throw new IllegalArgumentException("Usuario o contraseña incorrectos");
         }
 
-        String restauranteNombre = usuario.getRestaurante() != null
-                ? usuario.getRestaurante().getNombre() : null;
-        Long restauranteId = usuario.getRestaurante() != null
-                ? usuario.getRestaurante().getId() : null;
+        // Si la contraseña es legacy (texto plano), migrar a BCrypt
+        if (!usuario.getPassword().startsWith("$2")) {
+            usuario.setPassword(passwordService.hash(request.password()));
+            usuarioRepository.save(usuario);
+        }
+
+        Long restauranteId = usuario.getRestaurante() != null ? usuario.getRestaurante().getId() : null;
+        String restauranteNombre = usuario.getRestaurante() != null ? usuario.getRestaurante().getNombre() : null;
+
+        String token = jwtService.generateToken(
+                usuario.getId(), usuario.getUsername(), usuario.getRol(), restauranteId);
 
         return new LoginResponse(
-                usuario.getId(),
-                usuario.getUsername(),
-                usuario.getRol(),
-                restauranteId,
-                restauranteNombre,
-                apiToken
-        );
+                usuario.getId(), usuario.getUsername(), usuario.getRol(),
+                restauranteId, restauranteNombre, token);
     }
 }

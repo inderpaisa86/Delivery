@@ -24,6 +24,9 @@ whatsapp:
 app:
   api:
     token: ${APP_API_TOKEN:delivery-internal-token}
+  jwt:
+    secret: ${JWT_SECRET:delivery-jwt-secret-key-min-32-chars!!}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
   tracking:
     secret: ${TRACKING_SECRET:tracking-secret-key}
   rate-limit:

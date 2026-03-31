@@ -5,6 +5,7 @@ import org.delivery.application.dto.UsuarioRequest;
 import org.delivery.application.dto.UsuarioResponse;
 import org.delivery.domain.entity.Restaurante;
 import org.delivery.domain.entity.Usuario;
+import org.delivery.infrastructure.config.PasswordService;
 import org.delivery.infrastructure.persistence.repository.IRestauranteRepository;
 import org.delivery.infrastructure.persistence.repository.IUsuarioRepository;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ public class UsuarioService {
 
     private final IUsuarioRepository usuarioRepository;
     private final IRestauranteRepository restauranteRepository;
+    private final PasswordService passwordService;
 
     @Transactional
     public UsuarioResponse crear(UsuarioRequest request) {
@@ -29,7 +31,7 @@ public class UsuarioService {
 
         Usuario u = Usuario.builder()
                 .username(request.username())
-                .password(request.password())
+                .password(passwordService.hash(request.password()))
                 .foto(request.foto())
                 .rol("restaurante")
                 .restaurante(r)
@@ -43,7 +45,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
         u.setUsername(request.username());
         if (request.password() != null && !request.password().isBlank()) {
-            u.setPassword(request.password());
+            u.setPassword(passwordService.hash(request.password()));
         }
         u.setFoto(request.foto());
         return toResponse(usuarioRepository.save(u));
