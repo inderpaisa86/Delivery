@@ -185,11 +185,30 @@ http://localhost:8080/actuator/health
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `POST` | `/domiciliarios` | Registrar domiciliario |
-| `PUT` | `/domiciliarios/{id}` | Actualizar domiciliario |
-| `GET` | `/domiciliarios/disponibles?restauranteId=1` | Listar disponibles |
-| `GET` | `/domiciliarios/cedula/{cedula}` | Buscar por cédula |
-| `POST` | `/domiciliarios/ubicacion` | Actualizar ubicación |
+| `POST` | `/domiciliarios` | Registrar domiciliario (con foto base64) |
+| `PUT` | `/domiciliarios/{id}` | Actualizar domiciliario (preserva lat/lng) |
+| `GET` | `/domiciliarios/disponibles?restauranteId=1` | Listar disponibles con ubicación |
+| `GET` | `/domiciliarios/cedula/{cedula}` | Buscar por cédula (login domiciliario) |
+| `POST` | `/domiciliarios/ubicacion` | Actualizar ubicación GPS |
+
+### Usuarios (requieren token)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/usuarios` | Crear usuario (con foto base64) |
+| `PUT` | `/usuarios/{id}` | Actualizar usuario |
+| `GET` | `/usuarios?restauranteId=1` | Listar por restaurante |
+| `DELETE` | `/usuarios/{id}` | Desactivar usuario |
+
+### Auth (público)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/auth/login` | Login con username/password |
+
+### Pedidos (requieren token)
+
+Nota: se agregó `GET /pedidos/hoy` que filtra solo pedidos del día actual.
 
 ### Tracking (públicos)
 
