@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -81,6 +83,13 @@ public class PedidoService {
     public Page<PedidoResponse> listarPorRestaurante(Long restauranteId, Pageable pageable) {
         return pedidoRepository.findByRestauranteId(restauranteId, pageable)
                 .map(this::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PedidoResponse> listarPorRestauranteHoy(Long restauranteId, Pageable pageable) {
+        LocalDateTime hoy = LocalDate.now().atStartOfDay();
+        return pedidoRepository.findByRestauranteIdAndFechaGreaterThanEqual(
+                restauranteId, hoy, pageable).map(this::toResponse);
     }
 
     @Transactional(readOnly = true)

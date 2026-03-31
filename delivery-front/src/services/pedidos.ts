@@ -8,6 +8,10 @@ export const pedidoService = {
     api.get<Page<PedidoResponse>>(
       `/pedidos?restauranteId=${restauranteId}&page=${page}&size=${size}&sort=fecha,desc`,
     ),
+  listarHoy: (restauranteId: number, page = 0, size = 100) =>
+    api.get<Page<PedidoResponse>>(
+      `/pedidos/hoy?restauranteId=${restauranteId}&page=${page}&size=${size}&sort=fecha,desc`,
+    ),
   listarPorCliente: (telefono: string, page = 0, size = 20) =>
     api.get<Page<PedidoResponse>>(
       `/pedidos/cliente/${telefono}?page=${page}&size=${size}&sort=fecha,desc`,

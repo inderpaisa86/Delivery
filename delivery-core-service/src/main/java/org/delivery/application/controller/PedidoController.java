@@ -41,6 +41,13 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoService.listarPorRestaurante(restauranteId, pageable));
     }
 
+    @GetMapping("/hoy")
+    @Operation(summary = "Listar pedidos del día por restaurante (paginado)")
+    public ResponseEntity<Page<PedidoResponse>> listarHoy(
+            @RequestParam Long restauranteId, Pageable pageable) {
+        return ResponseEntity.ok(pedidoService.listarPorRestauranteHoy(restauranteId, pageable));
+    }
+
     @GetMapping("/cliente/{telefono}")
     @Operation(summary = "Historial de pedidos por cliente")
     public ResponseEntity<Page<PedidoResponse>> listarPorCliente(

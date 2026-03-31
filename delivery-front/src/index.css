@@ -1,13 +1,49 @@
 @import "tailwindcss";
-
-/* Leaflet styles */
 @import "leaflet/dist/leaflet.css";
 
 :root {
-  --color-primary: #6366f1;
-  --color-primary-dark: #4f46e5;
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-info: #3b82f6;
+  --bg-primary: #f8f9fb;
+  --bg-white: #ffffff;
+  --bg-sidebar: #ff6b35;
+  --border: #eef0f4;
+  --border-hover: #dde1e8;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --accent: #ff6b35;
+  --accent-light: #fff4ef;
+  --accent-dim: rgba(255, 107, 53, 0.1);
+  --accent-glow: rgba(255, 107, 53, 0.3);
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.04);
 }
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+
+@keyframes slide-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pop { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes glow-pulse { 0%, 100% { box-shadow: 0 0 15px rgba(255,107,53,0.15); } 50% { box-shadow: 0 0 25px rgba(255,107,53,0.3); } }
+.animate-slide-in { animation: slide-in 0.3s ease-out; }
+.animate-fade-up { animation: fade-up 0.4s ease-out; }
+.animate-pop { animation: pop 0.25s ease-out; }
+.animate-glow { animation: glow-pulse 3s ease-in-out infinite; }
+.btn-glow { box-shadow: 0 0 20px var(--accent-glow); }
+.btn-glow:hover { box-shadow: 0 0 30px var(--accent-glow); }
