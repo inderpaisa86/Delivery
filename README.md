@@ -9,17 +9,22 @@ Sistema de gestión de pedidos para restaurantes con asignación automática de 
 │  delivery-front │ ───────────────── │ delivery-core-service │
 │  React + TS     │    /api proxy     │ Spring Boot + JPA     │
 │  Tailwind CSS   │                   │ PostgreSQL            │
-│  Leaflet Maps   │                   │ WhatsApp Business API │
-└─────────────────┘                   └──────────────────────┘
-     :5173                                   :8080
+│  Leaflet Maps   │                   └──────────┬───────────┘
+└─────────────────┘                              │ REST API
+     :5173                            ┌──────────┴───────────┐
+                                      │    delivery-bot       │
+                                      │    Node.js + TS       │
+                                      │    whatsapp-web.js    │
+                                      └──────────────────────┘
 ```
 
 ## Módulos
 
 | Módulo | Tecnología | Descripción |
 |---|---|---|
-| `delivery-core-service` | Java 21, Spring Boot, PostgreSQL | Backend REST API, lógica de negocio, WhatsApp |
+| `delivery-core-service` | Java 21, Spring Boot, PostgreSQL | Backend REST API, lógica de negocio |
 | `delivery-front` | React 19, TypeScript, Tailwind, Leaflet | Frontend SPA, panel restaurante y domiciliario |
+| `delivery-bot` | Node.js, TypeScript, whatsapp-web.js | Bot de WhatsApp para recepción de pedidos |
 
 ## Inicio rápido
 
@@ -55,6 +60,16 @@ npm run dev
 ```
 
 Frontend disponible en `http://localhost:5173`
+
+### 4. Bot de WhatsApp (opcional)
+
+```bash
+cd delivery-bot
+npm install
+npm start
+```
+
+Escanea el QR que aparece en la terminal con WhatsApp.
 
 ## Funcionalidades principales
 

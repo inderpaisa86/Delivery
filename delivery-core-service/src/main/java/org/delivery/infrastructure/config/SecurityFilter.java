@@ -24,7 +24,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SecurityFilter implements Filter {
 
     private static final Set<String> PUBLIC_PREFIXES = Set.of(
-            "/webhook", "/track/",
+            "/webhook", "/track/", "/auth/",
             "/swagger-ui", "/v3/api-docs", "/swagger-resources",
             "/actuator"
     );

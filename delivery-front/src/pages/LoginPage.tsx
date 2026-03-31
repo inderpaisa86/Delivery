@@ -1,72 +1,61 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { useRestaurante } from '../context/RestauranteContext';
-import { restauranteService } from '../services/restaurantes';
+import { authService } from '../services/auth';
 import { domiciliarioService } from '../services/domiciliarios';
-import type { RestauranteResponse } from '../types';
 
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || 'delivery-internal-token';
 
-const RESTAURANT_IMAGES: Record<number, string> = {};
-const DEFAULT_IMAGE =
-  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&q=80';
-
-function getImage(id?: number) {
-  return id && RESTAURANT_IMAGES[id] ? RESTAURANT_IMAGES[id] : DEFAULT_IMAGE;
-}
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&q=80';
 
 export function LoginPage() {
   const { auth, login } = useAuth();
   const { setRestaurante } = useRestaurante();
   const navigate = useNavigate();
+
   const [role, setRole] = useState<'restaurante' | 'domiciliario'>('restaurante');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [cedula, setCedula] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedRestaurante, setSelectedRestaurante] = useState<RestauranteResponse | null>(null);
-
-  const { data: restaurantes } = useQuery({
-    queryKey: ['restaurantes-login'],
-    queryFn: restauranteService.listar,
-  });
-
-  useEffect(() => {
-    if (restaurantes?.length && !selectedRestaurante) {
-      setSelectedRestaurante(restaurantes[0]);
-    }
-  }, [restaurantes, selectedRestaurante]);
 
   if (auth) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
+    setLoading(true);
 
-    if (selectedRestaurante) setRestaurante(selectedRestaurante);
-
-    if (role === 'domiciliario') {
-      setLoading(true);
-      try {
-        // Guardar token antes de la llamada para que el header Authorization funcione
+    try {
+      if (role === 'restaurante') {
+        const res = await authService.login({ username, password });
+        // Guardar restaurante del usuario
+        if (res.restauranteId && res.restauranteNombre) {
+          setRestaurante({
+            id: res.restauranteId,
+            nombre: res.restauranteNombre,
+            telefono: '', direccion: '', lat: 0, lng: 0, activo: true, whatsappPhoneId: '',
+          });
+        }
+        login(res.token, 'restaurante');
+        navigate('/');
+      } else {
         localStorage.setItem('api_token', API_TOKEN);
         const dom = await domiciliarioService.buscarPorCedula(cedula);
-        login(API_TOKEN, role, dom.id);
+        login(API_TOKEN, 'domiciliario', dom.id);
         navigate('/');
-      } catch {
-        localStorage.removeItem('api_token');
-        setLoginError('No se encontró un domiciliario con esa cédula');
-      } finally {
-        setLoading(false);
       }
-    } else {
-      login(API_TOKEN, role);
-      navigate('/');
+    } catch (err) {
+      if (role === 'domiciliario') localStorage.removeItem('api_token');
+      setLoginError(role === 'restaurante'
+        ? 'Usuario o contraseña incorrectos'
+        : 'No se encontró un domiciliario con esa cédula');
+    } finally {
+      setLoading(false);
     }
   };
-
-  const bgImage = getImage(selectedRestaurante?.id);
 
   return (
     <div className="min-h-screen flex">
@@ -80,8 +69,8 @@ export function LoginPage() {
           <p className="text-gray-400 text-sm ml-11">Panel de gestión</p>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Bienvenido</h1>
-        <p className="text-gray-500 text-sm mb-8">Selecciona tu rol y restaurante para continuar</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">Iniciar sesión</h1>
+        <p className="text-gray-500 text-sm mb-8">Ingresa tus credenciales para continuar</p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {loginError && (
@@ -119,52 +108,47 @@ export function LoginPage() {
             </div>
           </div>
 
-          {/* Restaurante */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Restaurante</label>
-            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-              {restaurantes?.map((r) => (
-                <label
-                  key={r.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                    selectedRestaurante?.id === r.id
-                      ? 'border-blue-600 bg-blue-50/60'
-                      : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="restaurante"
-                    checked={selectedRestaurante?.id === r.id}
-                    onChange={() => setSelectedRestaurante(r)}
-                    className="accent-blue-600 w-4 h-4"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate ${
-                      selectedRestaurante?.id === r.id ? 'text-blue-700' : 'text-gray-800'
-                    }`}>{r.nombre}</p>
-                    {r.direccion && <p className="text-xs text-gray-400 truncate">{r.direccion}</p>}
-                  </div>
-                </label>
-              ))}
-              {!restaurantes?.length && (
-                <p className="text-sm text-gray-400 text-center py-4">Cargando restaurantes…</p>
-              )}
-            </div>
-          </div>
+          {/* Formulario restaurante: usuario y contraseña */}
+          {role === 'restaurante' && (
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Usuario</label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  placeholder="Ej: admin"
+                  autoComplete="username"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Contraseña</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+            </>
+          )}
 
-          {/* Cédula domiciliario */}
+          {/* Formulario domiciliario: cédula */}
           {role === 'domiciliario' && (
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Número de cédula
-              </label>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Número de cédula</label>
               <input
                 type="text"
                 value={cedula}
-                onChange={(e) => setCedula(e.target.value)}
+                onChange={(e) => setCedula(e.target.value.replace(/\D/g, ''))}
                 className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 placeholder="Ej: 1234567890"
+                inputMode="numeric"
                 required
               />
             </div>
@@ -184,30 +168,11 @@ export function LoginPage() {
 
       {/* ── Lado derecho: imagen ── */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden">
-        <img
-          src={bgImage}
-          alt={selectedRestaurante?.nombre ?? 'Restaurante'}
-          className="absolute inset-0 w-full h-full object-cover transition-all duration-700"
-        />
+        <img src={DEFAULT_IMAGE} alt="Restaurante" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         <div className="relative z-10 flex flex-col justify-end p-10 text-white">
-          {selectedRestaurante ? (
-            <>
-              <p className="text-sm font-medium uppercase tracking-widest text-white/70 mb-2">Restaurante seleccionado</p>
-              <h2 className="text-4xl font-bold mb-2 drop-shadow-lg">{selectedRestaurante.nombre}</h2>
-              {selectedRestaurante.direccion && (
-                <p className="text-white/80 flex items-center gap-1.5 text-sm">📍 {selectedRestaurante.direccion}</p>
-              )}
-              {selectedRestaurante.telefono && (
-                <p className="text-white/80 flex items-center gap-1.5 text-sm mt-1">📞 {selectedRestaurante.telefono}</p>
-              )}
-            </>
-          ) : (
-            <>
-              <h2 className="text-3xl font-bold mb-2 drop-shadow-lg">Gestiona tus pedidos</h2>
-              <p className="text-white/70 text-sm">Selecciona un restaurante para comenzar</p>
-            </>
-          )}
+          <h2 className="text-3xl font-bold mb-2 drop-shadow-lg">Gestiona tus pedidos</h2>
+          <p className="text-white/70 text-sm">Sistema de delivery en tiempo real</p>
         </div>
         <div className="absolute top-8 right-8 grid grid-cols-3 gap-2 opacity-20">
           {Array.from({ length: 9 }).map((_, i) => (

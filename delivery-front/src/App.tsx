@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage';
 import { PedidosPage } from './pages/restaurante/PedidosPage';
 import { ProductosPage } from './pages/restaurante/ProductosPage';
 import { DomiciliariosPage } from './pages/restaurante/DomiciliariosPage';
+import { UsuariosPage } from './pages/restaurante/UsuariosPage';
 import { DomiciliarioPanel } from './pages/domiciliario/DomiciliarioPanel';
 import { TrackingPage } from './pages/TrackingPage';
 import type { ReactNode } from 'react';
@@ -49,6 +50,9 @@ function AppRoutes() {
         } />
         <Route path="/restaurante/domiciliarios" element={
           <ProtectedRoute role="restaurante"><DomiciliariosPage /></ProtectedRoute>
+        } />
+        <Route path="/restaurante/usuarios" element={
+          <ProtectedRoute role="restaurante"><UsuariosPage /></ProtectedRoute>
         } />
 
         {/* Domiciliario */}

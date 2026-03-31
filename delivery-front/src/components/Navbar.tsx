@@ -28,6 +28,9 @@ export function Navbar() {
               <Link to="/restaurante/domiciliarios" className={`px-3 py-1.5 rounded-lg text-sm ${isActive('/restaurante/domiciliarios')}`}>
                 Domiciliarios
               </Link>
+              <Link to="/restaurante/usuarios" className={`px-3 py-1.5 rounded-lg text-sm ${isActive('/restaurante/usuarios')}`}>
+                Usuarios
+              </Link>
             </>
           )}
           {auth.role === 'domiciliario' && (
