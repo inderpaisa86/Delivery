@@ -88,6 +88,9 @@ export interface PedidoResponse {
   total: number;
   trackingToken: string;
   fecha: string;
+  domiciliarioNombre: string | null;
+  fechaAsignacion: string | null;
+  fechaEntrega: string | null;
   detalles: DetalleResponse[];
 }
 

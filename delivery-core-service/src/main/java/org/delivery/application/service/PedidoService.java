@@ -25,6 +25,7 @@ public class PedidoService {
     private final IClienteRepository clienteRepository;
     private final IProductoRepository productoRepository;
     private final IRestauranteRepository restauranteRepository;
+    private final IAsignacionDomicilioRepository asignacionRepository;
     private final PedidoStateMachine stateMachine;
     private final IWhatsAppPort whatsAppPort;
 
@@ -150,6 +151,10 @@ public class PedidoService {
         pedido.setLng(lng);
         if (direccion != null && !direccion.isBlank()) {
             pedido.setDireccion(direccion);
+            // Actualizar dirección del cliente para futuros pedidos
+            Cliente cliente = pedido.getCliente();
+            cliente.setDireccion(direccion);
+            clienteRepository.save(cliente);
         }
         pedido = pedidoRepository.save(pedido);
         log.info("Ubicación actualizada para pedido #{} ({}, {}) - {}", id, lat, lng, direccion);
@@ -176,6 +181,19 @@ public class PedidoService {
                         d.getProducto().getNombre(), d.getCantidad(), d.getPrecio()))
                 .toList();
 
+        // Buscar asignación de domiciliario
+        String domiciliarioNombre = null;
+        java.time.LocalDateTime fechaAsignacion = null;
+        java.time.LocalDateTime fechaEntrega = null;
+
+        var asignacion = asignacionRepository.findByPedidoId(pedido.getId());
+        if (asignacion.isPresent()) {
+            var a = asignacion.get();
+            domiciliarioNombre = a.getDomiciliario().getNombre();
+            fechaAsignacion = a.getFecha();
+            fechaEntrega = a.getFechaEntrega();
+        }
+
         return new PedidoResponse(
                 pedido.getId(),
                 pedido.getNumeroDiario(),
@@ -190,6 +208,9 @@ public class PedidoService {
                 pedido.getTotal(),
                 pedido.getTrackingToken(),
                 pedido.getFecha(),
+                domiciliarioNombre,
+                fechaAsignacion,
+                fechaEntrega,
                 detalles);
     }
 }

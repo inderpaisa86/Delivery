@@ -41,7 +41,7 @@ export async function handlePedido(phone: string, texto: string): Promise<string
   // Buscar si el cliente ya existe
   const cliente = await api.buscarCliente(phone, session.restauranteId);
 
-  if (cliente?.nombre && cliente?.direccion) {
+  if (cliente?.nombre && cliente?.direccion && !cliente.direccion.toLowerCase().includes('pendiente')) {
     updateSession(phone, {
       step: 'waiting_address_confirm',
       clienteNombre: cliente.nombre,

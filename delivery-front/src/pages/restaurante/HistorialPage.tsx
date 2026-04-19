@@ -73,24 +73,29 @@ export function HistorialPage() {
                 <th className="px-4 py-3 text-left">#</th>
                 <th className="px-4 py-3 text-left">Cliente</th>
                 <th className="px-4 py-3 text-left">Teléfono</th>
-                <th className="px-4 py-3 text-left">Dirección</th>
-                <th className="px-4 py-3 text-left">Fecha</th>
+                <th className="px-4 py-3 text-left">Domiciliario</th>
+                <th className="px-4 py-3 text-left">Hora pedido</th>
+                <th className="px-4 py-3 text-left">Hora entrega</th>
                 <th className="px-4 py-3 text-center">Estado</th>
                 <th className="px-4 py-3 text-right">Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
-              {pedidos.map((p) => (
+              {pedidos.map((p) => {
+                const horaFmt = (d: string | null) => d ? new Date(d).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) : '—';
+                return (
                 <tr key={p.id} className="hover:bg-gray-50 cursor-pointer transition" onClick={() => setDetalle(p)}>
                   <td className="px-4 py-3 font-mono text-xs font-bold text-[var(--accent)]">{p.numeroDiario ?? p.id}</td>
                   <td className="px-4 py-3 font-medium">{p.clienteNombre || 'Sin nombre'}</td>
                   <td className="px-4 py-3 text-[var(--text-secondary)]">{p.clienteTelefono}</td>
-                  <td className="px-4 py-3 text-[var(--text-muted)] max-w-[200px] truncate">{p.direccion}</td>
-                  <td className="px-4 py-3 text-[var(--text-secondary)]">{new Date(p.fecha).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                  <td className="px-4 py-3 text-[var(--text-secondary)]">{p.domiciliarioNombre || '—'}</td>
+                  <td className="px-4 py-3 text-[var(--text-secondary)]">{horaFmt(p.fecha)}</td>
+                  <td className="px-4 py-3 text-[var(--text-secondary)]">{horaFmt(p.fechaEntrega)}</td>
                   <td className="px-4 py-3 text-center"><EstadoBadge estado={p.estado} /></td>
                   <td className="px-4 py-3 text-right font-bold">${Number(p.total).toLocaleString()}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -104,7 +109,14 @@ export function HistorialPage() {
             <div className="flex justify-between"><span className="text-[var(--text-muted)]">Cliente</span><span className="font-medium">{detalle.clienteNombre || 'Sin nombre'}</span></div>
             <div className="flex justify-between"><span className="text-[var(--text-muted)]">Teléfono</span><span>{detalle.clienteTelefono}</span></div>
             <div className="flex justify-between"><span className="text-[var(--text-muted)]">Dirección</span><span className="text-right max-w-[220px]">{detalle.direccion}</span></div>
-            <div className="flex justify-between"><span className="text-[var(--text-muted)]">Fecha</span><span>{new Date(detalle.fecha).toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--text-muted)]">Domiciliario</span><span className="font-medium">{detalle.domiciliarioNombre || 'Sin asignar'}</span></div>
+            <hr className="border-[var(--border)]" />
+            <div className="flex justify-between"><span className="text-[var(--text-muted)]">Hora pedido</span><span>{new Date(detalle.fecha).toLocaleString()}</span></div>
+            {detalle.fechaAsignacion && <div className="flex justify-between"><span className="text-[var(--text-muted)]">Hora asignación</span><span>{new Date(detalle.fechaAsignacion).toLocaleString()}</span></div>}
+            {detalle.fechaEntrega && <div className="flex justify-between"><span className="text-[var(--text-muted)]">Hora entrega</span><span>{new Date(detalle.fechaEntrega).toLocaleString()}</span></div>}
+            {detalle.fechaEntrega && detalle.fechaAsignacion && (
+              <div className="flex justify-between"><span className="text-[var(--text-muted)]">Tiempo de entrega</span><span className="font-semibold text-[var(--accent)]">{Math.round((new Date(detalle.fechaEntrega).getTime() - new Date(detalle.fechaAsignacion).getTime()) / 60000)} min</span></div>
+            )}
             <hr className="border-[var(--border)]" />
             {detalle.detalles.map((d, i) => (
               <div key={i} className="flex justify-between py-1">

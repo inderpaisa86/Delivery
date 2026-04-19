@@ -20,6 +20,9 @@ public record PedidoResponse(
         BigDecimal total,
         String trackingToken,
         LocalDateTime fecha,
+        String domiciliarioNombre,
+        LocalDateTime fechaAsignacion,
+        LocalDateTime fechaEntrega,
         List<DetalleResponse> detalles
 ) {
     public record DetalleResponse(

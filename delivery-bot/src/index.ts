@@ -51,10 +51,16 @@ client.on('message', async (msg: any) => {
     if (msg.fromMe) return;
 
     let phone = msg.from.replace(/@.*$/, '');
+    const originalFrom = phone;
     try {
       const contact = await msg.getContact();
       if (contact.number) phone = contact.number;
     } catch {}
+
+    // Log para debug
+    if (originalFrom !== phone) {
+      console.log(`📱 [${originalFrom}] → número real: ${phone}`);
+    }
 
     const session = getSession(phone);
     console.log(`📩 [${phone}] step=${session.step} tipo=${msg.type} body="${msg.body || ''}"`);

@@ -90,6 +90,7 @@ public class AsignacionService {
             domiciliarioRepository.save(domiciliario);
 
             asignacion.setEstado(EstadoAsignacion.ENTREGADO);
+            asignacion.setFechaEntrega(java.time.LocalDateTime.now());
             asignacionRepository.save(asignacion);
 
             log.info("Domiciliario {} liberado del pedido #{}",

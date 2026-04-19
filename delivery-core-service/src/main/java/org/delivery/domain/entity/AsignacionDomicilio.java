@@ -36,6 +36,8 @@ public class AsignacionDomicilio {
     @Column(nullable = false)
     private LocalDateTime fecha = LocalDateTime.now();
 
+    private LocalDateTime fechaEntrega;
+
     public AsignacionDomicilio(Pedido pedido, Domiciliario domiciliario) {
         this.pedido = pedido;
         this.domiciliario = domiciliario;
