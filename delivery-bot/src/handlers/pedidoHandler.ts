@@ -184,20 +184,30 @@ async function crearYPedirUbicacion(phone: string, nombre: string, _resumen: str
 /** Parsea pedidos separados por coma, "y", punto y coma, salto de línea, o número después de texto */
 function parsearPedido(texto: string, productos: Producto[]): { productoId: number; cantidad: number }[] {
   const detalles: { productoId: number; cantidad: number }[] = [];
-  const normalizado = texto.replace(/([a-záéíóúñ])\s+(\d)/gi, '$1, $2');
-  const segmentos = normalizado.split(/[,;\n]|\by\b/i);
+  // NO normalizar "letra número" porque rompe nombres como "Combo 1"
+  const segmentos = texto.split(/[,;\n]|\by\b/i);
 
   for (const seg of segmentos) {
     const trimmed = seg.trim();
-    const spaceIdx = trimmed.indexOf(' ');
-    if (spaceIdx <= 0) continue;
-    const cantStr = trimmed.substring(0, spaceIdx);
-    const nombre = trimmed.substring(spaceIdx + 1).trim().toLowerCase();
-    if (!/^\d+$/.test(cantStr)) continue;
-    const cantidad = parseInt(cantStr);
-    if (cantidad <= 0 || cantidad > 100) continue;
+    if (!trimmed) continue;
+
+    // Caso 1: empieza con número + espacio + texto → "2 hamburguesas"
+    const match = trimmed.match(/^(\d+)\s+(.+)$/);
+    if (match) {
+      const cantidad = parseInt(match[1]);
+      const nombre = match[2].trim().toLowerCase();
+      if (cantidad > 0 && cantidad <= 100) {
+        const producto = buscarProducto(nombre, productos);
+        if (producto) { detalles.push({ productoId: producto.id, cantidad }); continue; }
+      }
+    }
+
+    // Caso 2: solo texto (sin número al inicio) → cantidad = 1
+    const nombre = trimmed.toLowerCase();
     const producto = buscarProducto(nombre, productos);
-    if (producto) detalles.push({ productoId: producto.id, cantidad });
+    if (producto) {
+      detalles.push({ productoId: producto.id, cantidad: 1 });
+    }
   }
   return detalles;
 }
