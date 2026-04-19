@@ -98,10 +98,10 @@ export function PedidosPage() {
                 <p className="text-xs text-[var(--text-muted)] mt-1">{p.detalles.map((d, i) => <span key={i}>{i > 0 && ' · '}{d.cantidad}x {d.producto} ${(d.cantidad * d.precio).toLocaleString()}</span>)}</p>
               </div>
               <div className="border-t border-[var(--border)] px-5 py-3 flex gap-2">
-                {p.estado === EstadoPedido.NUEVO && !p.lat && (
+                {p.estado === EstadoPedido.NUEVO && p.lat === null && p.direccion?.toLowerCase().includes('pendiente') && (
                   <span className="flex-1 text-center text-xs text-amber-600 bg-amber-50 py-2 rounded-xl font-medium">⏳ Esperando ubicación del cliente</span>
                 )}
-                {NEXT[p.estado] && (p.estado !== EstadoPedido.NUEVO || p.lat) && (
+                {NEXT[p.estado] && (p.estado !== EstadoPedido.NUEVO || p.lat !== null || !p.direccion?.toLowerCase().includes('pendiente')) && (
                   <button onClick={(e) => { e.stopPropagation(); cambiar.mutate({ id: p.id, estado: NEXT[p.estado]!.estado }); }}
                     disabled={cambiar.isPending}
                     className="flex-1 bg-[var(--accent)] text-white text-sm py-2 rounded-xl font-medium hover:brightness-110 transition btn-glow disabled:opacity-50">

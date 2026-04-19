@@ -30,8 +30,10 @@ public class PedidoStateMachine {
         EstadoPedido actual = pedido.getEstado();
         validarTransicion(actual, nuevoEstado);
 
-        // No confirmar si no tiene ubicación
-        if (nuevoEstado == EstadoPedido.CONFIRMADO && pedido.getLat() == null) {
+        // No confirmar si no tiene ubicación ni dirección válida
+        if (nuevoEstado == EstadoPedido.CONFIRMADO
+                && pedido.getLat() == null
+                && (pedido.getDireccion() == null || pedido.getDireccion().toLowerCase().contains("pendiente"))) {
             throw new IllegalStateException(
                     "No se puede confirmar el pedido sin ubicación de entrega");
         }

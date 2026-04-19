@@ -79,7 +79,8 @@ public class PedidoController {
             @PathVariable Long id,
             @RequestParam Double lat,
             @RequestParam Double lng,
-            @RequestParam(required = false) String direccion) {
-        return ResponseEntity.ok(pedidoService.actualizarUbicacionPorId(id, lat, lng, direccion));
+            @RequestParam(required = false) String direccion,
+            @RequestParam(required = false) String telefonoContacto) {
+        return ResponseEntity.ok(pedidoService.actualizarUbicacionPorId(id, lat, lng, direccion, telefonoContacto));
     }
 }

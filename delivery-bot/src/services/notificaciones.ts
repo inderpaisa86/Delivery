@@ -13,17 +13,17 @@ let cacheReady = false;
 
 const MENSAJES: Record<string, (p: PedidoResponse) => string> = {
   CONFIRMADO: (p) =>
-    `✅ *Pedido #${p.id} confirmado*\n\nEl restaurante confirmó tu pedido. Están preparándolo pronto.`,
+    `✅ *Pedido #${p.numeroDiario ?? p.id} confirmado*\n\nEl restaurante confirmó tu pedido. Están preparándolo pronto.`,
   PREPARANDO: (p) =>
-    `👨‍🍳 *Pedido #${p.id} en preparación*\n\nTu pedido se está preparando. ¡Ya falta poco!`,
+    `👨‍🍳 *Pedido #${p.numeroDiario ?? p.id} en preparación*\n\nTu pedido se está preparando. ¡Ya falta poco!`,
   LISTO: (p) =>
-    `📦 *Pedido #${p.id} listo*\n\nTu pedido está listo. Un domiciliario lo recogerá pronto.`,
+    `📦 *Pedido #${p.numeroDiario ?? p.id} listo*\n\nTu pedido está listo. Un domiciliario lo recogerá pronto.`,
   EN_CAMINO: (p) =>
-    `🛵 *Pedido #${p.id} en camino*\n\nTu pedido va en camino a tu dirección.\n\n🔗 Seguimiento: ${TRACKING_URL}/track/${p.trackingToken}`,
+    `🛵 *Pedido #${p.numeroDiario ?? p.id} en camino*\n\nTu pedido va en camino a tu dirección.\n\n🔗 Seguimiento: ${TRACKING_URL}/track/${p.trackingToken}`,
   ENTREGADO: (p) =>
-    `🏁 *Pedido #${p.id} entregado*\n\n¡Tu pedido fue entregado! Gracias por tu compra. 🙌\n\nEscribe *menu* para pedir de nuevo.`,
+    `🏁 *Pedido #${p.numeroDiario ?? p.id} entregado*\n\n¡Tu pedido fue entregado! Gracias por tu compra. 🙌\n\nEscribe *menu* para pedir de nuevo.`,
   CANCELADO: (p) =>
-    `❌ *Pedido #${p.id} cancelado*\n\nTu pedido fue cancelado. Si fue un error, escribe *menu* para hacer uno nuevo.`,
+    `❌ *Pedido #${p.numeroDiario ?? p.id} cancelado*\n\nTu pedido fue cancelado. Si fue un error, escribe *menu* para hacer uno nuevo.`,
 };
 
 type SendMessageFn = (phone: string, message: string) => Promise<void>;

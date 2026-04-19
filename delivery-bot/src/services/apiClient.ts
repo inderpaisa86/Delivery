@@ -72,9 +72,10 @@ export const api = {
   actualizarEstado: (pedidoId: number, estado: string) =>
     request<PedidoResponse>(`/pedidos/${pedidoId}/estado?estado=${estado}`, { method: 'PUT' }),
 
-  actualizarUbicacion: (pedidoId: number, lat: number, lng: number, direccion?: string) => {
+  actualizarUbicacion: (pedidoId: number, lat: number, lng: number, direccion?: string, telefonoContacto?: string) => {
     const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
     if (direccion) params.set('direccion', direccion);
+    if (telefonoContacto) params.set('telefonoContacto', telefonoContacto);
     return request<PedidoResponse>(`/pedidos/${pedidoId}/ubicacion?${params}`, { method: 'PUT' });
   },
 

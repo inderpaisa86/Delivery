@@ -4,8 +4,8 @@ import qrcode from 'qrcode-terminal';
 // @ts-ignore
 import { handleMenu } from './handlers/menuHandler.js';
 import { handlePedido, handleNombre, handleAddressConfirm } from './handlers/pedidoHandler.js';
-import { handleUbicacion, handleDetallesEntrega } from './handlers/ubicacionHandler.js';
-import { getSession, resetSession } from './session/userSession.js';
+import { handleUbicacion, handleDetallesEntrega, handleDireccionManual, handleContactPhone } from './handlers/ubicacionHandler.js';
+import { getSession, resetSession, updateSession } from './session/userSession.js';
 import { iniciarPolling } from './services/notificaciones.js';
 
 const client = new Client({
@@ -28,15 +28,26 @@ client.on('ready', () => {
   console.log('📞 Esperando mensajes...\n');
 
   iniciarPolling(async (phone, message) => {
-    try {
-      const numberId = await client.getNumberId(phone);
-      if (numberId) {
-        await client.sendMessage(numberId._serialized, message);
-      } else {
-        console.warn(`⚠️ Número no encontrado en WhatsApp: ${phone}`);
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const numberId = await client.getNumberId(phone);
+        if (numberId) {
+          await client.sendMessage(numberId._serialized, message);
+          return; // Éxito
+        } else {
+          console.warn(`⚠️ Número no encontrado en WhatsApp: ${phone}`);
+          return;
+        }
+      } catch (err: any) {
+        const isRetryable = err?.message?.includes('detached Frame') || err?.message?.includes('No LID');
+        if (isRetryable && attempt < 3) {
+          console.warn(`⚠️ Reintentando envío a ${phone} (intento ${attempt}/3)...`);
+          await new Promise((r) => setTimeout(r, 2000 * attempt));
+        } else {
+          console.error(`❌ Error enviando a ${phone} (intento ${attempt}):`, err?.message || err);
+          return;
+        }
       }
-    } catch (err) {
-      console.error(`Error enviando mensaje a ${phone}:`, err);
     }
   }).catch((err: unknown) => console.error('Error iniciando polling:', err));
 });
@@ -65,7 +76,7 @@ client.on('message', async (msg: any) => {
     const session = getSession(phone);
     console.log(`📩 [${phone}] step=${session.step} tipo=${msg.type} body="${msg.body || ''}"`);
 
-    // ── Ubicación ──
+    // ── Ubicación GPS (funciona en waiting_location, waiting_location_choice, waiting_typed_address) ──
     if (msg.location) {
       const loc = msg.location;
       const address = loc.description || (loc as Record<string, unknown>).address as string || undefined;
@@ -99,20 +110,51 @@ client.on('message', async (msg: any) => {
       return;
     }
 
-    // ── Esperando datos de entrega ──
+    // ── Esperando elección: GPS o manual ──
+    if (session.step === 'waiting_location_choice') {
+      if (textoLower === '1' || textoLower === 'gps' || textoLower === 'ubicacion' || textoLower === 'ubicación') {
+        updateSession(phone, { step: 'waiting_location' });
+        await msg.reply('📍 Envía tu *ubicación GPS*:\n\nToca 📎 → *Ubicación* → Enviar ubicación actual.');
+        return;
+      }
+      if (textoLower === '2' || textoLower === 'manual' || textoLower === 'escribir' || textoLower === 'direccion' || textoLower === 'dirección') {
+        updateSession(phone, { step: 'waiting_typed_address' });
+        await msg.reply('📝 Escribe tu *dirección completa*:\n\n_Incluye barrio, edificio/casa, torre, apto, ciudad y referencias._');
+        return;
+      }
+      await msg.reply('Escribe *1* para enviar ubicación GPS o *2* para escribir la dirección.');
+      return;
+    }
+
+    // ── Esperando ubicación GPS ──
+    if (session.step === 'waiting_location') {
+      await msg.reply('📍 Necesitamos tu *ubicación GPS*.\n\nToca 📎 → *Ubicación* → Enviar ubicación actual.\n\n_O escribe "2" para escribir la dirección manualmente._');
+      // Permitir cambiar a manual
+      if (textoLower === '2' || textoLower === 'manual') {
+        updateSession(phone, { step: 'waiting_typed_address' });
+        await msg.reply('📝 Escribe tu *dirección completa*:');
+      }
+      return;
+    }
+
+    // ── Esperando dirección escrita ──
+    if (session.step === 'waiting_typed_address') {
+      const reply = await handleDireccionManual(phone, texto);
+      await msg.reply(reply);
+      return;
+    }
+
+    // ── Esperando datos adicionales (después de GPS) ──
     if (session.step === 'waiting_details') {
       const reply = await handleDetallesEntrega(phone, texto);
       await msg.reply(reply);
       return;
     }
 
-    // ── Esperando ubicación ──
-    if (session.step === 'waiting_location') {
-      await msg.reply(
-        '📍 Necesitamos tu *ubicación GPS*.\n\n' +
-        'Toca 📎 → *Ubicación* → Enviar ubicación actual.\n\n' +
-        '_Escribe "cancelar" para anular._',
-      );
+    // ── Esperando teléfono de contacto ──
+    if (session.step === 'waiting_contact_phone') {
+      const reply = await handleContactPhone(phone, texto);
+      await msg.reply(reply);
       return;
     }
 

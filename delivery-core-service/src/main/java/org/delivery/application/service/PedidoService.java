@@ -144,20 +144,22 @@ public class PedidoService {
     }
 
     @Transactional
-    public PedidoResponse actualizarUbicacionPorId(Long id, Double lat, Double lng, String direccion) {
+    public PedidoResponse actualizarUbicacionPorId(Long id, Double lat, Double lng, String direccion, String telefonoContacto) {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado: " + id));
         pedido.setLat(lat);
         pedido.setLng(lng);
         if (direccion != null && !direccion.isBlank()) {
             pedido.setDireccion(direccion);
-            // Actualizar dirección del cliente para futuros pedidos
             Cliente cliente = pedido.getCliente();
             cliente.setDireccion(direccion);
             clienteRepository.save(cliente);
         }
+        if (telefonoContacto != null && !telefonoContacto.isBlank()) {
+            pedido.setTelefonoContacto(telefonoContacto);
+        }
         pedido = pedidoRepository.save(pedido);
-        log.info("Ubicación actualizada para pedido #{} ({}, {}) - {}", id, lat, lng, direccion);
+        log.info("Pedido #{} actualizado: ({}, {}) dir={} contacto={}", id, lat, lng, direccion, telefonoContacto);
         return toResponse(pedido);
     }
 
@@ -207,6 +209,7 @@ public class PedidoService {
                 pedido.getEstado(),
                 pedido.getTotal(),
                 pedido.getTrackingToken(),
+                pedido.getTelefonoContacto(),
                 pedido.getFecha(),
                 domiciliarioNombre,
                 fechaAsignacion,

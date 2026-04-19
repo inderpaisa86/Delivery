@@ -52,6 +52,9 @@ public class Pedido {
     @Column(unique = true, length = 64)
     private String trackingToken;
 
+    @Column(name = "telefono_contacto", length = 20)
+    private String telefonoContacto;
+
     @Column(name = "numero_diario")
     private Integer numeroDiario;
 

@@ -87,6 +87,7 @@ export interface PedidoResponse {
   estado: EstadoPedido;
   total: number;
   trackingToken: string;
+  telefonoContacto: string | null;
   fecha: string;
   domiciliarioNombre: string | null;
   fechaAsignacion: string | null;

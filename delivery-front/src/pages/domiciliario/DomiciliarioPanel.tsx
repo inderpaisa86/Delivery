@@ -286,6 +286,7 @@ export function DomiciliarioPanel() {
                 </div>
                 <p className="text-sm text-gray-600 font-medium">📍 {p.direccion}</p>
                 <p className="text-sm text-gray-500">{p.clienteNombre || p.clienteTelefono}</p>
+                <p className="text-xs text-green-600 font-medium">📞 Recibe: {p.telefonoContacto || p.clienteTelefono}</p>
                 <p className="text-lg font-bold text-indigo-600 mt-1">${Number(p.total).toLocaleString()}</p>
 
                 <button
@@ -332,6 +333,7 @@ export function DomiciliarioPanel() {
                 </div>
                 <p className="text-sm text-gray-600 font-medium">📍 {p.direccion}</p>
                 <p className="text-sm text-gray-500">{p.clienteNombre || p.clienteTelefono}</p>
+                <p className="text-xs text-green-600 font-medium">📞 Recibe: {p.telefonoContacto || p.clienteTelefono}</p>
                 <p className="text-lg font-bold text-indigo-600 mt-1">${Number(p.total).toLocaleString()}</p>
 
                 <button

@@ -19,6 +19,7 @@ public record PedidoResponse(
         EstadoPedido estado,
         BigDecimal total,
         String trackingToken,
+        String telefonoContacto,
         LocalDateTime fecha,
         String domiciliarioNombre,
         LocalDateTime fechaAsignacion,

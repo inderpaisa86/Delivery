@@ -1,4 +1,4 @@
-export type SessionStep = 'idle' | 'waiting_name' | 'waiting_address_confirm' | 'waiting_location' | 'waiting_details';
+export type SessionStep = 'idle' | 'waiting_name' | 'waiting_address_confirm' | 'waiting_location_choice' | 'waiting_location' | 'waiting_typed_address' | 'waiting_details' | 'waiting_contact_phone';
 
 export interface UserSession {
   step: SessionStep;
@@ -8,6 +8,7 @@ export interface UserSession {
   pendingAddress?: string;
   clienteNombre?: string;
   clienteDireccion?: string;
+  contactPhone?: string;
   restauranteId: number;
 }
 

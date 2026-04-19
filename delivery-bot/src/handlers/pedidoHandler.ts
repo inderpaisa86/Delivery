@@ -132,7 +132,7 @@ export async function handleNombre(phone: string, nombre: string): Promise<strin
   return await crearYPedirUbicacion(phone, nombre.trim(), pending.resumenTexto);
 }
 
-/** Crea el pedido en el backend y pide ubicación */
+/** Crea el pedido en el backend y ofrece opciones de dirección */
 async function crearYPedirUbicacion(phone: string, nombre: string, _resumen: string): Promise<string> {
   const session = getSession(phone);
   const pending = pendingOrders.get(phone);
@@ -153,7 +153,7 @@ async function crearYPedirUbicacion(phone: string, nombre: string, _resumen: str
 
     pendingOrders.delete(phone);
     updateSession(phone, {
-      step: 'waiting_location',
+      step: 'waiting_location_choice',
       pendingPedidoId: response.id,
       clienteNombre: nombre,
     });
@@ -168,8 +168,10 @@ async function crearYPedirUbicacion(phone: string, nombre: string, _resumen: str
       `${resumen}\n\n` +
       `💰 *Subtotal: $${response.total.toLocaleString('es-CO')}*\n` +
       `🛵 _El valor del domicilio es adicional al pedido_\n\n` +
-      `📍 Ahora envíanos tu *ubicación* para saber dónde entregar.\n` +
-      `Toca 📎 → Ubicación → Enviar ubicación actual.`
+      `📍 *¿Cómo quieres enviar tu dirección?*\n\n` +
+      `*1️⃣* Enviar *ubicación GPS* (📎 → Ubicación)\n` +
+      `*2️⃣* Escribir *dirección manualmente*\n\n` +
+      `Escribe *1* o *2*, o envía tu ubicación directamente.`
     );
   } catch (err) {
     console.error('Error creando pedido:', err);
