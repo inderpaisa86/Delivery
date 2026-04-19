@@ -48,6 +48,16 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoService.listarPorRestauranteHoy(restauranteId, pageable));
     }
 
+    @GetMapping("/historial")
+    @Operation(summary = "Listar pedidos por rango de fechas")
+    public ResponseEntity<Page<PedidoResponse>> listarHistorial(
+            @RequestParam Long restauranteId,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate desde,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate hasta,
+            Pageable pageable) {
+        return ResponseEntity.ok(pedidoService.listarPorFechas(restauranteId, desde, hasta, pageable));
+    }
+
     @GetMapping("/cliente/{telefono}")
     @Operation(summary = "Historial de pedidos por cliente")
     public ResponseEntity<Page<PedidoResponse>> listarPorCliente(

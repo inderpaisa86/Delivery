@@ -99,6 +99,14 @@ public class PedidoService {
     }
 
     @Transactional(readOnly = true)
+    public Page<PedidoResponse> listarPorFechas(Long restauranteId, LocalDate desde, LocalDate hasta, Pageable pageable) {
+        LocalDateTime desdeTime = desde.atStartOfDay();
+        LocalDateTime hastaTime = hasta.plusDays(1).atStartOfDay(); // Incluir todo el día "hasta"
+        return pedidoRepository.findByRestauranteIdAndFechaBetween(
+                restauranteId, desdeTime, hastaTime, pageable).map(this::toResponse);
+    }
+
+    @Transactional(readOnly = true)
     public Page<PedidoResponse> listarPorCliente(String telefono, Pageable pageable) {
         return pedidoRepository.findByClienteTelefono(telefono, pageable)
                 .map(this::toResponse);

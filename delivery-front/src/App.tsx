@@ -9,6 +9,7 @@ import { PedidosPage } from './pages/restaurante/PedidosPage';
 import { ProductosPage } from './pages/restaurante/ProductosPage';
 import { DomiciliariosPage } from './pages/restaurante/DomiciliariosPage';
 import { UsuariosPage } from './pages/restaurante/UsuariosPage';
+import { HistorialPage } from './pages/restaurante/HistorialPage';
 import { DomiciliarioPanel } from './pages/domiciliario/DomiciliarioPanel';
 import { TrackingPage } from './pages/TrackingPage';
 import type { ReactNode } from 'react';
@@ -57,6 +58,7 @@ function AppRoutes() {
           <Route path="/restaurante/productos" element={<ProtectedRoute role="restaurante"><ProductosPage /></ProtectedRoute>} />
           <Route path="/restaurante/domiciliarios" element={<ProtectedRoute role="restaurante"><DomiciliariosPage /></ProtectedRoute>} />
           <Route path="/restaurante/usuarios" element={<ProtectedRoute role="restaurante"><UsuariosPage /></ProtectedRoute>} />
+          <Route path="/restaurante/historial" element={<ProtectedRoute role="restaurante"><HistorialPage /></ProtectedRoute>} />
           <Route path="/domiciliario" element={<ProtectedRoute role="domiciliario"><DomiciliarioPanel /></ProtectedRoute>} />
           <Route path="/track/:token" element={<TrackingPage />} />
         </Routes>

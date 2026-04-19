@@ -4,6 +4,7 @@ import { useRestaurante } from '../context/RestauranteContext';
 
 const restauranteLinks = [
   { to: '/restaurante/pedidos', icon: '📋', label: 'Pedidos' },
+  { to: '/restaurante/historial', icon: '📊', label: 'Historial' },
   { to: '/restaurante/productos', icon: '🍔', label: 'Productos' },
   { to: '/restaurante/domiciliarios', icon: '🛵', label: 'Domiciliarios' },
   { to: '/restaurante/usuarios', icon: '👤', label: 'Usuarios' },

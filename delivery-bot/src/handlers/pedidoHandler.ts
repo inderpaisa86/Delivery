@@ -1,15 +1,21 @@
 import { api, type Producto } from '../services/apiClient.js';
 import { getSession, updateSession } from '../session/userSession.js';
 
+/** Datos del pedido pendiente mientras se pide el nombre */
+interface PendingOrder {
+  detalles: { productoId: number; cantidad: number }[];
+  resumenTexto: string;
+}
+
+const pendingOrders = new Map<string, PendingOrder>();
+
 /**
  * Intenta parsear un mensaje como pedido.
- * Formato esperado: "2 hamburguesas, 1 gaseosa"
- * Retorna null si no es un pedido válido.
+ * Si es válido, pide el nombre antes de crear.
  */
 export async function handlePedido(phone: string, texto: string): Promise<string | null> {
   const session = getSession(phone);
 
-  // Cargar productos del restaurante
   let productos: Producto[];
   try {
     productos = await api.listarProductos(session.restauranteId);
@@ -17,42 +23,74 @@ export async function handlePedido(phone: string, texto: string): Promise<string
     return '⚠️ Error conectando con el servidor. Intenta de nuevo.';
   }
 
-  if (productos.length === 0) {
-    return null; // No hay productos, no es un pedido
-  }
+  if (productos.length === 0) return null;
 
-  // Parsear el mensaje
   const detalles = parsearPedido(texto, productos);
-  if (detalles.length === 0) {
-    return null; // No se reconoció como pedido
+  if (detalles.length === 0) return null;
+
+  // Calcular resumen para mostrarlo
+  const resumen = detalles.map((d) => {
+    const prod = productos.find((p) => p.id === d.productoId);
+    const nombre = prod?.nombre ?? '?';
+    const subtotal = (prod?.precio ?? 0) * d.cantidad;
+    return `• ${d.cantidad}x ${nombre} - $${subtotal.toLocaleString('es-CO')}`;
+  }).join('\n');
+
+  // Guardar pedido pendiente y pedir nombre
+  pendingOrders.set(phone, { detalles, resumenTexto: resumen });
+  updateSession(phone, { step: 'waiting_name' });
+
+  return (
+    `🛒 *Tu pedido:*\n\n${resumen}\n\n` +
+    `📝 Para continuar, escribe tu *nombre completo*:`
+  );
+}
+
+/**
+ * Recibe el nombre y crea el pedido en el backend.
+ */
+export async function handleNombre(phone: string, nombre: string): Promise<string> {
+  const session = getSession(phone);
+  const pending = pendingOrders.get(phone);
+
+  if (!pending) {
+    updateSession(phone, { step: 'idle' });
+    return '⚠️ No hay pedido pendiente. Envía tu pedido de nuevo.';
   }
 
   try {
     const response = await api.crearPedido({
       restauranteId: session.restauranteId,
       telefono: phone,
+      nombre: nombre.trim(),
       direccion: 'Pendiente ubicación',
-      detalles,
+      detalles: pending.detalles,
     });
 
-    // Guardar pedido pendiente y esperar ubicación
-    updateSession(phone, { step: 'waiting_location', pendingPedidoId: response.id });
+    pendingOrders.delete(phone);
+    updateSession(phone, {
+      step: 'waiting_location',
+      pendingPedidoId: response.id,
+      clienteNombre: nombre.trim(),
+    });
 
     const resumen = response.detalles
       .map((d) => `• ${d.cantidad}x ${d.producto} - $${(d.cantidad * d.precio).toLocaleString('es-CO')}`)
       .join('\n');
 
     return (
-      `✅ *Pedido #${response.id} recibido*\n\n` +
+      `✅ *Pedido #${response.numeroDiario ?? response.id} recibido*\n` +
+      `👤 *Cliente:* ${nombre.trim()}\n\n` +
       `${resumen}\n\n` +
       `💰 *Subtotal: $${response.total.toLocaleString('es-CO')}*\n` +
       `🛵 _El valor del domicilio es adicional al pedido_\n\n` +
-      `🔎 *Seguimiento:* #${response.id}\n\n` +
       `📍 Ahora envíanos tu *ubicación* para saber dónde entregar.\n` +
       `Toca 📎 → Ubicación → Enviar ubicación actual.`
     );
   } catch (err) {
     console.error('Error creando pedido:', err);
+    pendingOrders.delete(phone);
+    updateSession(phone, { step: 'idle' });
     return '⚠️ No pudimos procesar tu pedido. Intenta de nuevo.';
   }
 }
@@ -77,7 +115,6 @@ function parsearPedido(
     const cantidad = parseInt(cantStr);
     if (cantidad <= 0 || cantidad > 100) continue;
 
-    // Buscar producto: exacto → singular → parcial
     const producto = buscarProducto(nombre, productos);
     if (producto) {
       detalles.push({ productoId: producto.id, cantidad });
@@ -88,18 +125,15 @@ function parsearPedido(
 }
 
 function buscarProducto(nombre: string, productos: Producto[]): Producto | undefined {
-  // Exacto
   let found = productos.find((p) => p.nombre.toLowerCase() === nombre);
   if (found) return found;
 
-  // Singular (quitar s/es)
   const singular = normalizarPlural(nombre);
   if (singular !== nombre) {
     found = productos.find((p) => p.nombre.toLowerCase() === singular);
     if (found) return found;
   }
 
-  // Parcial
   found = productos.find((p) => p.nombre.toLowerCase().includes(singular));
   if (found) return found;
 

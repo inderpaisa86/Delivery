@@ -18,6 +18,10 @@ public interface IPedidoRepository extends JpaRepository<Pedido, Long> {
     Page<Pedido> findByRestauranteIdAndFechaGreaterThanEqual(
             Long restauranteId, LocalDateTime desde, Pageable pageable);
 
+    /** Pedidos de un restaurante entre dos fechas */
+    Page<Pedido> findByRestauranteIdAndFechaBetween(
+            Long restauranteId, LocalDateTime desde, LocalDateTime hasta, Pageable pageable);
+
     /** Busca el pedido más reciente de un cliente que esté pendiente de ubicación (lat es null) */
     Optional<Pedido> findFirstByClienteTelefonoAndEstadoAndLatIsNullOrderByFechaDesc(
             String telefono, EstadoPedido estado);

@@ -2,7 +2,7 @@ import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
 import { handleMenu } from './handlers/menuHandler.js';
-import { handlePedido } from './handlers/pedidoHandler.js';
+import { handlePedido, handleNombre } from './handlers/pedidoHandler.js';
 import { handleUbicacion, handleDetallesEntrega } from './handlers/ubicacionHandler.js';
 import { getSession, resetSession } from './session/userSession.js';
 import { iniciarPolling } from './services/notificaciones.js';
@@ -26,10 +26,8 @@ client.on('ready', () => {
   console.log('\n✅ Bot conectado y listo!');
   console.log('📞 Esperando mensajes...\n');
 
-  // Iniciar polling de notificaciones
   iniciarPolling(async (phone, message) => {
     try {
-      // Verificar que el número existe en WhatsApp y obtener el ID correcto
       const numberId = await client.getNumberId(phone);
       if (numberId) {
         await client.sendMessage(numberId._serialized, message);
@@ -51,41 +49,39 @@ client.on('message', async (msg: InstanceType<typeof pkg.Message>) => {
     if (msg.from.includes('@g.us')) return;
     if (msg.fromMe) return;
 
-    // Obtener número real del contacto (WhatsApp puede enviar LID en vez del número)
     let phone = msg.from.replace(/@.*$/, '');
     try {
       const contact = await msg.getContact();
-      if (contact.number) {
-        phone = contact.number;
-      }
-    } catch {
-      // Si falla, usar el from original limpio
-    }
+      if (contact.number) phone = contact.number;
+    } catch {}
 
     const session = getSession(phone);
+    console.log(`📩 [${phone}] step=${session.step} tipo=${msg.type} body="${msg.body || ''}"`);
 
-    console.log(`📩 [${phone}] (from=${msg.from}) tipo=${msg.type} step=${session.step} body="${msg.body || ''}" hasLocation=${!!msg.location}`);
-
-    // ── Mensaje de ubicación ──
+    // ── Ubicación ──
     if (msg.location) {
       const loc = msg.location;
       const address = loc.description || (loc as Record<string, unknown>).address as string || undefined;
-      console.log(`📍 [${phone}] lat=${loc.latitude} lng=${loc.longitude} address="${address || 'N/A'}"`);
       const reply = await handleUbicacion(phone, loc.latitude, loc.longitude, address);
       await msg.reply(reply);
       return;
     }
 
-    // Solo texto
     if (msg.type !== 'chat' || !msg.body) return;
-
     const texto = msg.body.trim();
     const textoLower = texto.toLowerCase();
 
-    // ── Cancelar (funciona en cualquier paso) ──
+    // ── Cancelar ──
     if (['cancelar', 'cancel', 'anular'].includes(textoLower)) {
       resetSession(phone);
       await msg.reply('❌ Pedido cancelado. Escribe *menu* para empezar de nuevo.');
+      return;
+    }
+
+    // ── Esperando nombre ──
+    if (session.step === 'waiting_name') {
+      const reply = await handleNombre(phone, texto);
+      await msg.reply(reply);
       return;
     }
 
@@ -99,50 +95,36 @@ client.on('message', async (msg: InstanceType<typeof pkg.Message>) => {
     // ── Esperando ubicación ──
     if (session.step === 'waiting_location') {
       await msg.reply(
-        '📍 Necesitamos tu *ubicación GPS* para entregar el pedido.\n\n' +
+        '📍 Necesitamos tu *ubicación GPS*.\n\n' +
         'Toca 📎 → *Ubicación* → Enviar ubicación actual.\n\n' +
-        '_Escribe "cancelar" para anular el pedido._',
+        '_Escribe "cancelar" para anular._',
       );
       return;
     }
 
-    // ── Comandos generales (solo en estado idle) ──
-
+    // ── Comandos generales ──
     if (['hola', 'hi', 'hello', 'inicio', 'empezar', 'ayuda', 'help'].includes(textoLower)) {
       await msg.reply(
         '👋 *¡Hola! Bienvenido a Delivery App* 🛵\n\n' +
-        '¿Qué deseas hacer?\n\n' +
         '📋 Escribe *menu* para ver productos\n' +
         '🛒 Envía tu pedido: _"2 hamburguesas, 1 gaseosa"_\n' +
-        '📍 Después de pedir, comparte tu *ubicación*\n' +
         '❌ Escribe *cancelar* en cualquier momento',
       );
       return;
     }
 
     if (['menu', 'menú', 'carta', 'productos', 'ver menu', 'ver menú'].includes(textoLower)) {
-      const reply = await handleMenu(phone);
-      await msg.reply(reply);
+      await msg.reply(await handleMenu(phone));
       return;
     }
 
-    if (['estado', 'seguimiento', 'mi pedido'].includes(textoLower)) {
-      if (session.pendingPedidoId) {
-        await msg.reply(`📦 Tu pedido *#${session.pendingPedidoId}* está pendiente.\n\n📍 Envía tu ubicación para continuar.`);
-      } else {
-        await msg.reply('ℹ️ No tienes pedidos activos. Escribe *menu* para hacer uno.');
-      }
-      return;
-    }
-
-    // Intentar parsear como pedido
+    // ── Intentar parsear como pedido ──
     const pedidoReply = await handlePedido(phone, texto);
     if (pedidoReply) {
       await msg.reply(pedidoReply);
       return;
     }
 
-    // No se entendió
     await msg.reply(
       '🤔 No entendí tu mensaje.\n\n' +
       'Escribe *menu* para ver productos.\n' +

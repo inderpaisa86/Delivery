@@ -12,6 +12,10 @@ export const pedidoService = {
     api.get<Page<PedidoResponse>>(
       `/pedidos/hoy?restauranteId=${restauranteId}&page=${page}&size=${size}&sort=fecha,desc`,
     ),
+  listarHistorial: (restauranteId: number, desde: string, hasta: string, page = 0, size = 100) =>
+    api.get<Page<PedidoResponse>>(
+      `/pedidos/historial?restauranteId=${restauranteId}&desde=${desde}&hasta=${hasta}&page=${page}&size=${size}&sort=fecha,desc`,
+    ),
   listarPorCliente: (telefono: string, page = 0, size = 20) =>
     api.get<Page<PedidoResponse>>(
       `/pedidos/cliente/${telefono}?page=${page}&size=${size}&sort=fecha,desc`,
