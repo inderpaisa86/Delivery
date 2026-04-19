@@ -9,6 +9,7 @@ export interface LoginResponse {
   userId: number;
   username: string;
   rol: string;
+  perfil: string;
   restauranteId: number | null;
   restauranteNombre: string | null;
   token: string;

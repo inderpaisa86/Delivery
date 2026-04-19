@@ -7,5 +7,6 @@ public record UsuarioRequest(
         @NotBlank String username,
         @NotBlank String password,
         String foto,
+        String perfil,
         @NotNull Long restauranteId
 ) {}

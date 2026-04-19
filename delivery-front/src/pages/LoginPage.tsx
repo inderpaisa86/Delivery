@@ -24,7 +24,7 @@ export function LoginPage() {
       if (role === 'restaurante') {
         const res = await authService.login({ username, password });
         if (res.restauranteId && res.restauranteNombre) setRestaurante({ id: res.restauranteId, nombre: res.restauranteNombre, telefono: '', direccion: '', lat: 0, lng: 0, activo: true, whatsappPhoneId: '' });
-        login(res.token, 'restaurante'); navigate('/');
+        login(res.token, 'restaurante', undefined, res.perfil as 'admin' | 'operario'); navigate('/');
       } else {
         localStorage.setItem('api_token', API_TOKEN);
         const dom = await domiciliarioService.buscarPorCedula(cedula);

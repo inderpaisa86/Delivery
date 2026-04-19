@@ -41,11 +41,6 @@ public class AsignacionService {
         Pedido pedido = pedidoRepository.findById(pedidoId)
                 .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado: " + pedidoId));
 
-        if (pedido.getLat() == null || pedido.getLng() == null) {
-            log.warn("Pedido #{} sin coordenadas, asignación no posible", pedidoId);
-            return;
-        }
-
         Long restauranteId = pedido.getRestaurante().getId();
         List<Domiciliario> disponibles = domiciliarioRepository
                 .findByDisponibleTrueAndRestauranteIdAndLatIsNotNullAndLngIsNotNull(restauranteId);
@@ -56,27 +51,36 @@ public class AsignacionService {
             return;
         }
 
-        Domiciliario masCercano = disponibles.stream()
-                .min(Comparator.comparingDouble(d ->
-                        geoPort.calcularDistanciaKm(
-                                pedido.getLat(), pedido.getLng(),
-                                d.getLat(), d.getLng())))
-                .orElseThrow();
+        Domiciliario asignado;
 
-        asignacionRepository.save(new AsignacionDomicilio(pedido, masCercano));
+        if (pedido.getLat() != null && pedido.getLng() != null) {
+            // Con coordenadas: asignar el más cercano
+            asignado = disponibles.stream()
+                    .min(Comparator.comparingDouble(d ->
+                            geoPort.calcularDistanciaKm(
+                                    pedido.getLat(), pedido.getLng(),
+                                    d.getLat(), d.getLng())))
+                    .orElseThrow();
 
-        masCercano.setDisponible(false);
-        domiciliarioRepository.save(masCercano);
+            double distancia = geoPort.calcularDistanciaKm(
+                    pedido.getLat(), pedido.getLng(),
+                    asignado.getLat(), asignado.getLng());
+            log.info("Domiciliario {} asignado a pedido #{} ({} km)",
+                    asignado.getNombre(), pedidoId, String.format("%.2f", distancia));
+        } else {
+            // Sin coordenadas (dirección manual): asignar el primero disponible
+            asignado = disponibles.get(0);
+            log.info("Domiciliario {} asignado a pedido #{} (sin GPS, primer disponible)",
+                    asignado.getNombre(), pedidoId);
+        }
+
+        asignacionRepository.save(new AsignacionDomicilio(pedido, asignado));
+
+        asignado.setDisponible(false);
+        domiciliarioRepository.save(asignado);
 
         pedido.setEstado(EstadoPedido.EN_CAMINO);
         pedidoRepository.save(pedido);
-
-        double distancia = geoPort.calcularDistanciaKm(
-                pedido.getLat(), pedido.getLng(),
-                masCercano.getLat(), masCercano.getLng());
-
-        log.info("Domiciliario {} asignado a pedido #{} ({} km)",
-                masCercano.getNombre(), pedidoId, String.format("%.2f", distancia));
 
         whatsAppPort.notificarCambioEstado(
                 pedido.getCliente().getTelefono(), pedidoId, EstadoPedido.EN_CAMINO);

@@ -2,12 +2,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useRestaurante } from '../context/RestauranteContext';
 
-const restauranteLinks = [
-  { to: '/restaurante/pedidos', icon: '📋', label: 'Pedidos' },
-  { to: '/restaurante/historial', icon: '📊', label: 'Historial' },
-  { to: '/restaurante/productos', icon: '🍔', label: 'Productos' },
-  { to: '/restaurante/domiciliarios', icon: '🛵', label: 'Domiciliarios' },
-  { to: '/restaurante/usuarios', icon: '👤', label: 'Usuarios' },
+const allRestauranteLinks = [
+  { to: '/restaurante/pedidos', icon: '📋', label: 'Pedidos', perfiles: ['admin', 'operario'] },
+  { to: '/restaurante/historial', icon: '📊', label: 'Historial', perfiles: ['admin'] },
+  { to: '/restaurante/productos', icon: '🍔', label: 'Productos', perfiles: ['admin'] },
+  { to: '/restaurante/domiciliarios', icon: '🛵', label: 'Domiciliarios', perfiles: ['admin'] },
+  { to: '/restaurante/usuarios', icon: '👤', label: 'Usuarios', perfiles: ['admin'] },
 ];
 const domiciliarioLinks = [
   { to: '/domiciliario', icon: '🗺️', label: 'Mis Pedidos' },
@@ -18,7 +18,11 @@ export function Sidebar() {
   const { restaurante } = useRestaurante();
   const location = useLocation();
   if (!auth) return null;
-  const links = auth.role === 'restaurante' ? restauranteLinks : domiciliarioLinks;
+
+  const perfil = auth.perfil || 'operario';
+  const links = auth.role === 'restaurante'
+    ? allRestauranteLinks.filter((l) => l.perfiles.includes(perfil))
+    : domiciliarioLinks;
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-[230px] bg-gradient-to-b from-[var(--bg-sidebar)] to-[#e85d2c] flex flex-col z-40 shadow-xl">
@@ -30,6 +34,9 @@ export function Sidebar() {
             {restaurante && <p className="text-xs text-white/60 truncate max-w-[130px]">{restaurante.nombre}</p>}
           </div>
         </div>
+        {auth.role === 'restaurante' && (
+          <p className="text-xs text-white/40 mt-2 ml-12">{perfil === 'admin' ? '👑 Administrador' : '👤 Operario'}</p>
+        )}
       </div>
       <nav className="flex-1 px-3 space-y-1">
         {links.map((link) => {

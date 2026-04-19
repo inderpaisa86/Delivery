@@ -5,6 +5,7 @@ public record UsuarioResponse(
         String username,
         String foto,
         String rol,
+        String perfil,
         boolean activo,
         Long restauranteId,
         String restauranteNombre

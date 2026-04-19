@@ -85,7 +85,16 @@ client.on('message', async (msg: any) => {
       return;
     }
 
-    if (msg.type !== 'chat' || !msg.body) return;
+    if (msg.type !== 'chat' || !msg.body) {
+      if (['image', 'sticker', 'video', 'audio', 'ptt', 'document'].includes(msg.type)) {
+        await msg.reply(
+          '📎 Solo puedo procesar *texto* y *ubicaciones*.\n\n' +
+          'Escribe *menu* para ver productos o envía tu pedido:\n' +
+          '_"2 hamburguesas, 1 gaseosa"_'
+        );
+      }
+      return;
+    }
     const texto = msg.body.trim();
     const textoLower = texto.toLowerCase();
 

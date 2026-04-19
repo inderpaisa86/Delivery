@@ -3,12 +3,13 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 interface AuthState {
   token: string;
   role: 'restaurante' | 'domiciliario';
+  perfil?: 'admin' | 'operario';
   domiciliarioId?: number;
 }
 
 interface AuthContextType {
   auth: AuthState | null;
-  login: (token: string, role: AuthState['role'], domiciliarioId?: number) => void;
+  login: (token: string, role: AuthState['role'], domiciliarioId?: number, perfil?: AuthState['perfil']) => void;
   logout: () => void;
 }
 
@@ -21,8 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const login = useCallback(
-    (token: string, role: AuthState['role'], domiciliarioId?: number) => {
-      const state: AuthState = { token, role, domiciliarioId };
+    (token: string, role: AuthState['role'], domiciliarioId?: number, perfil?: AuthState['perfil']) => {
+      const state: AuthState = { token, role, domiciliarioId, perfil };
       localStorage.setItem('auth', JSON.stringify(state));
       localStorage.setItem('api_token', token);
       setAuth(state);

@@ -4,6 +4,7 @@ export interface UsuarioRequest {
   username: string;
   password: string;
   foto?: string | null;
+  perfil?: string;
   restauranteId: number;
 }
 
@@ -12,6 +13,7 @@ export interface UsuarioResponse {
   username: string;
   foto: string | null;
   rol: string;
+  perfil: string;
   activo: boolean;
   restauranteId: number;
   restauranteNombre: string;

@@ -34,6 +34,7 @@ public class UsuarioService {
                 .password(passwordService.hash(request.password()))
                 .foto(request.foto())
                 .rol("restaurante")
+                .perfil(request.perfil() != null ? request.perfil() : "operario")
                 .restaurante(r)
                 .build();
         return toResponse(usuarioRepository.save(u));
@@ -67,7 +68,7 @@ public class UsuarioService {
 
     private UsuarioResponse toResponse(Usuario u) {
         return new UsuarioResponse(
-                u.getId(), u.getUsername(), u.getFoto(), u.getRol(), u.isActivo(),
+                u.getId(), u.getUsername(), u.getFoto(), u.getRol(), u.getPerfil(), u.isActivo(),
                 u.getRestaurante() != null ? u.getRestaurante().getId() : null,
                 u.getRestaurante() != null ? u.getRestaurante().getNombre() : null);
     }

@@ -30,6 +30,10 @@ public class Usuario {
     @Column(nullable = false, length = 20)
     private String rol; // "restaurante" o "domiciliario"
 
+    @Builder.Default
+    @Column(nullable = false, length = 20)
+    private String perfil = "operario"; // "admin" o "operario"
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurante_id")
     private Restaurante restaurante;

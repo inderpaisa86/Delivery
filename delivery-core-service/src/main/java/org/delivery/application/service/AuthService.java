@@ -39,6 +39,7 @@ public class AuthService {
 
         return new LoginResponse(
                 usuario.getId(), usuario.getUsername(), usuario.getRol(),
+                usuario.getPerfil(),
                 restauranteId, restauranteNombre, token);
     }
 }
