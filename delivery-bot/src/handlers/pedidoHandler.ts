@@ -95,13 +95,18 @@ export async function handleNombre(phone: string, nombre: string): Promise<strin
   }
 }
 
-/** Parsea "2 hamburguesas, 1 gaseosa" y matchea con productos */
+/** Parsea pedidos separados por coma, "y", punto y coma, salto de línea, o número después de texto */
 function parsearPedido(
   texto: string,
   productos: Producto[],
 ): { productoId: number; cantidad: number }[] {
   const detalles: { productoId: number; cantidad: number }[] = [];
-  const segmentos = texto.split(',');
+
+  // Insertar separador antes de cada número que viene después de una letra (ej: "hamburguesas 1" → "hamburguesas, 1")
+  const normalizado = texto.replace(/([a-záéíóúñ])\s+(\d)/gi, '$1, $2');
+
+  // Separar por: coma, punto y coma, "y", salto de línea
+  const segmentos = normalizado.split(/[,;\n]|\by\b/i);
 
   for (const seg of segmentos) {
     const trimmed = seg.trim();

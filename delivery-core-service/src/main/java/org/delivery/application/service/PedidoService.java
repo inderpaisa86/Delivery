@@ -36,6 +36,14 @@ public class PedidoService {
 
         Cliente cliente = clienteRepository
                 .findByTelefonoAndRestauranteId(request.telefono(), restaurante.getId())
+                .map(c -> {
+                    // Actualizar nombre si viene en el request y el cliente no tenía
+                    if (request.nombre() != null && !request.nombre().isBlank()) {
+                        c.setNombre(request.nombre());
+                        clienteRepository.save(c);
+                    }
+                    return c;
+                })
                 .orElseGet(() -> clienteRepository.save(
                         Cliente.builder()
                                 .telefono(request.telefono())
