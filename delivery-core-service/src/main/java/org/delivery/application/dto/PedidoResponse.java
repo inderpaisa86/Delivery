@@ -8,6 +8,7 @@ import org.delivery.domain.enums.EstadoPedido;
 
 public record PedidoResponse(
         Long id,
+        Integer numeroDiario,
         Long restauranteId,
         String restauranteNombre,
         String clienteTelefono,

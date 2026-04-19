@@ -44,12 +44,18 @@ public class PedidoService {
                                 .restaurante(restaurante)
                                 .build()));
 
+        // Calcular número diario
+        int ultimoNumero = pedidoRepository.findMaxNumeroDiario(
+                restaurante.getId(), LocalDate.now().atStartOfDay());
+        int numeroDiario = ultimoNumero + 1;
+
         Pedido pedido = Pedido.builder()
                 .cliente(cliente)
                 .restaurante(restaurante)
                 .direccion(request.direccion())
                 .lat(request.lat())
                 .lng(request.lng())
+                .numeroDiario(numeroDiario)
                 .trackingToken(UUID.randomUUID().toString())
                 .build();
 
@@ -156,6 +162,7 @@ public class PedidoService {
 
         return new PedidoResponse(
                 pedido.getId(),
+                pedido.getNumeroDiario(),
                 pedido.getRestaurante().getId(),
                 pedido.getRestaurante().getNombre(),
                 pedido.getCliente().getTelefono(),

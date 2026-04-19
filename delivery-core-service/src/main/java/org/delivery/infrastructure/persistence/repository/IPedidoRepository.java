@@ -21,4 +21,11 @@ public interface IPedidoRepository extends JpaRepository<Pedido, Long> {
     /** Busca el pedido más reciente de un cliente que esté pendiente de ubicación (lat es null) */
     Optional<Pedido> findFirstByClienteTelefonoAndEstadoAndLatIsNullOrderByFechaDesc(
             String telefono, EstadoPedido estado);
+
+    /** Obtiene el mayor número diario del día para un restaurante */
+    @org.springframework.data.jpa.repository.Query(
+        "SELECT COALESCE(MAX(p.numeroDiario), 0) FROM Pedido p " +
+        "WHERE p.restaurante.id = :restauranteId AND p.fecha >= :desde")
+    int findMaxNumeroDiario(@org.springframework.data.repository.query.Param("restauranteId") Long restauranteId,
+                            @org.springframework.data.repository.query.Param("desde") LocalDateTime desde);
 }

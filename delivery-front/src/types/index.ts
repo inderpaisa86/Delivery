@@ -76,6 +76,7 @@ export interface DetalleResponse {
 
 export interface PedidoResponse {
   id: number;
+  numeroDiario: number | null;
   restauranteId: number;
   restauranteNombre: string;
   clienteTelefono: string;

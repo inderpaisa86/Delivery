@@ -85,7 +85,7 @@ export function PedidosPage() {
             <div key={p.id} className="bg-white rounded-2xl border border-[var(--border)] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)] transition-all cursor-pointer group" onClick={() => setDetalle(p)}>
               <div className="p-5">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-lg font-bold text-[var(--accent)]">#{p.id}</span>
+                  <span className="text-lg font-bold text-[var(--accent)]">📞 {p.clienteTelefono} <span className="text-sm text-[var(--text-muted)]">· Pedido #{p.numeroDiario ?? p.id}</span></span>
                   <span className="text-xs text-[var(--text-muted)]">{new Date(p.fecha).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <Stepper estado={p.estado} />
@@ -94,12 +94,14 @@ export function PedidosPage() {
                   <span className="text-xl font-bold">${Number(p.total).toLocaleString()}</span>
                 </div>
                 <p className="text-sm font-semibold">{p.clienteNombre || 'Sin nombre'}</p>
-                <p className="text-xs text-[var(--text-secondary)]">📞 {p.clienteTelefono}</p>
                 <p className="text-xs text-[var(--text-muted)] truncate">📍 {p.direccion}</p>
-                <p className="text-xs text-[var(--text-muted)] mt-1">{p.detalles.map((d, i) => <span key={i}>{i > 0 && ' · '}{d.cantidad}x {d.producto}</span>)}</p>
+                <p className="text-xs text-[var(--text-muted)] mt-1">{p.detalles.map((d, i) => <span key={i}>{i > 0 && ' · '}{d.cantidad}x {d.producto} ${(d.cantidad * d.precio).toLocaleString()}</span>)}</p>
               </div>
               <div className="border-t border-[var(--border)] px-5 py-3 flex gap-2">
-                {NEXT[p.estado] && (
+                {p.estado === EstadoPedido.NUEVO && !p.lat && (
+                  <span className="flex-1 text-center text-xs text-amber-600 bg-amber-50 py-2 rounded-xl font-medium">⏳ Esperando ubicación del cliente</span>
+                )}
+                {NEXT[p.estado] && (p.estado !== EstadoPedido.NUEVO || p.lat) && (
                   <button onClick={(e) => { e.stopPropagation(); cambiar.mutate({ id: p.id, estado: NEXT[p.estado]!.estado }); }}
                     disabled={cambiar.isPending}
                     className="flex-1 bg-[var(--accent)] text-white text-sm py-2 rounded-xl font-medium hover:brightness-110 transition btn-glow disabled:opacity-50">
@@ -116,16 +118,17 @@ export function PedidosPage() {
         </div>
       )}
 
-      <Modal open={!!detalle} onClose={() => setDetalle(null)} title={`Pedido #${detalle?.id}`}>
+      <Modal open={!!detalle} onClose={() => setDetalle(null)} title={`📞 ${detalle?.clienteTelefono}`}>
         {detalle && (
           <div className="space-y-4 text-sm">
             <Stepper estado={detalle.estado} />
             <div className="flex justify-between"><span className="text-[var(--text-muted)]">Estado</span><EstadoBadge estado={detalle.estado} /></div>
-            <div className="flex justify-between"><span className="text-[var(--text-muted)]">Cliente</span><span className="font-medium">{detalle.clienteNombre} ({detalle.clienteTelefono})</span></div>
+            <div className="flex justify-between"><span className="text-[var(--text-muted)]">Cliente</span><span className="font-medium">{detalle.clienteNombre || 'Sin nombre'}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--text-muted)]">Teléfono</span><span className="font-medium">{detalle.clienteTelefono}</span></div>
             <div className="flex justify-between"><span className="text-[var(--text-muted)]">Dirección</span><span className="text-right max-w-[220px]">{detalle.direccion}</span></div>
             <div className="flex justify-between"><span className="text-[var(--text-muted)]">Hora</span><span>{new Date(detalle.fecha).toLocaleString()}</span></div>
             <hr className="border-[var(--border)]" />
-            {detalle.detalles.map((d, i) => <div key={i} className="flex justify-between py-1"><span>{d.cantidad}x {d.producto}</span><span className="font-semibold text-[var(--accent)]">${Number(d.precio).toLocaleString()}</span></div>)}
+            {detalle.detalles.map((d, i) => <div key={i} className="flex justify-between py-1"><span>{d.cantidad}x {d.producto}</span><span className="font-semibold text-[var(--accent)]">${(d.cantidad * d.precio).toLocaleString()}</span></div>)}
             <hr className="border-[var(--border)]" />
             <div className="flex justify-between text-lg font-bold"><span>Total</span><span className="text-[var(--accent)]">${Number(detalle.total).toLocaleString()}</span></div>
           </div>

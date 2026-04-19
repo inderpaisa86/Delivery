@@ -3,13 +3,13 @@ import { api, type PedidoResponse } from './apiClient.js';
 const RESTAURANTE_ID = Number(process.env.RESTAURANTE_ID || '1');
 const ENV = process.env.NODE_ENV || 'development';
 const POLL_INTERVAL = ENV === 'production'
-  ? Number(process.env.POLL_INTERVAL_MS || '300000')   // prod: 5 minutos
-  : Number(process.env.POLL_INTERVAL_MS || '10000');    // dev: 10 segundos
+  ? Number(process.env.POLL_INTERVAL_MS || '300000')
+  : Number(process.env.POLL_INTERVAL_MS || '10000');
 
 const TRACKING_URL = process.env.TRACKING_URL || 'http://localhost:5173';
 
-// Mapa de pedidoId → último estado conocido
 const estadoCache = new Map<number, string>();
+let cacheReady = false;
 
 const MENSAJES: Record<string, (p: PedidoResponse) => string> = {
   CONFIRMADO: (p) =>
@@ -30,13 +30,21 @@ type SendMessageFn = (phone: string, message: string) => Promise<void>;
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 
-export function iniciarPolling(sendMessage: SendMessageFn) {
+/** Normaliza el teléfono: quita sufijos de WhatsApp y caracteres no numéricos */
+function toWhatsAppId(telefono: string): string {
+  const clean = telefono.replace(/@.*$/, '').replace(/\D/g, '');
+  return `${clean}@c.us`;
+}
+
+export async function iniciarPolling(sendMessage: SendMessageFn) {
   console.log(`🔔 Notificaciones activas — polling cada ${POLL_INTERVAL / 1000}s (${ENV})`);
 
-  // Primera carga: llenar cache sin notificar
-  cargarEstadosIniciales();
+  // Cargar cache inicial y esperar a que termine
+  await cargarEstadosIniciales();
 
   intervalId = setInterval(async () => {
+    if (!cacheReady) return;
+
     try {
       const pedidos = await api.listarPedidosHoy(RESTAURANTE_ID);
 
@@ -44,27 +52,26 @@ export function iniciarPolling(sendMessage: SendMessageFn) {
         const estadoAnterior = estadoCache.get(pedido.id);
         const estadoActual = pedido.estado;
 
-        // Si es nuevo en el cache, solo guardar
         if (estadoAnterior === undefined) {
           estadoCache.set(pedido.id, estadoActual);
           continue;
         }
 
-        // Si cambió de estado, notificar
         if (estadoAnterior !== estadoActual) {
           estadoCache.set(pedido.id, estadoActual);
 
           const generarMensaje = MENSAJES[estadoActual];
           if (generarMensaje && pedido.clienteTelefono) {
             const mensaje = generarMensaje(pedido);
-            const whatsappId = `${pedido.clienteTelefono}@c.us`;
+            const whatsappId = toWhatsAppId(pedido.clienteTelefono);
 
-            console.log(`🔔 Notificando [${pedido.clienteTelefono}] pedido #${pedido.id}: ${estadoAnterior} → ${estadoActual}`);
+            console.log(`🔔 Notificando [${pedido.clienteTelefono}] → ${whatsappId} | pedido #${pedido.id}: ${estadoAnterior} → ${estadoActual}`);
 
             try {
               await sendMessage(whatsappId, mensaje);
+              console.log(`✅ Notificación enviada a ${pedido.clienteTelefono}`);
             } catch (err) {
-              console.error(`Error enviando notificación a ${pedido.clienteTelefono}:`, err);
+              console.error(`❌ Error enviando notificación a ${pedido.clienteTelefono}:`, err);
             }
           }
         }
@@ -81,9 +88,11 @@ async function cargarEstadosIniciales() {
     for (const p of pedidos) {
       estadoCache.set(p.id, p.estado);
     }
+    cacheReady = true;
     console.log(`📋 Cache inicial: ${estadoCache.size} pedidos cargados`);
   } catch (err) {
     console.error('Error cargando estados iniciales:', err);
+    cacheReady = true; // Permitir que siga aunque falle
   }
 }
 

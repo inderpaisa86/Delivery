@@ -5,11 +5,19 @@ function getToken(): string {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${getToken()}`,
+  };
+
+  // Solo agregar Content-Type si hay body
+  if (init?.body) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getToken()}`,
+      ...headers,
       ...init?.headers,
     },
   });
@@ -17,11 +25,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const body = await res.text().catch(() => '');
     throw new Error(`${res.status}: ${body || res.statusText}`);
   }
-  // Sin contenido
   if (res.status === 204 || res.headers.get('content-length') === '0') {
     return undefined as T;
   }
-  // Intentar parsear JSON, si falla devolver undefined
   const text = await res.text();
   if (!text) return undefined as T;
   try {

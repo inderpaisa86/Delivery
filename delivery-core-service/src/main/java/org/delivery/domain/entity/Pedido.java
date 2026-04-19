@@ -52,6 +52,9 @@ public class Pedido {
     @Column(unique = true, length = 64)
     private String trackingToken;
 
+    @Column(name = "numero_diario")
+    private Integer numeroDiario;
+
     @Builder.Default
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetallePedido> detalles = new ArrayList<>();

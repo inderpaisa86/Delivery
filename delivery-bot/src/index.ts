@@ -29,11 +29,17 @@ client.on('ready', () => {
   // Iniciar polling de notificaciones
   iniciarPolling(async (phone, message) => {
     try {
-      await client.sendMessage(phone, message);
+      // Verificar que el número existe en WhatsApp y obtener el ID correcto
+      const numberId = await client.getNumberId(phone);
+      if (numberId) {
+        await client.sendMessage(numberId._serialized, message);
+      } else {
+        console.warn(`⚠️ Número no encontrado en WhatsApp: ${phone}`);
+      }
     } catch (err) {
       console.error(`Error enviando mensaje a ${phone}:`, err);
     }
-  });
+  }).catch((err: unknown) => console.error('Error iniciando polling:', err));
 });
 
 client.on('authenticated', () => console.log('🔐 Sesión autenticada'));
@@ -45,10 +51,20 @@ client.on('message', async (msg: InstanceType<typeof pkg.Message>) => {
     if (msg.from.includes('@g.us')) return;
     if (msg.fromMe) return;
 
-    const phone = msg.from.replace('@c.us', '');
+    // Obtener número real del contacto (WhatsApp puede enviar LID en vez del número)
+    let phone = msg.from.replace(/@.*$/, '');
+    try {
+      const contact = await msg.getContact();
+      if (contact.number) {
+        phone = contact.number;
+      }
+    } catch {
+      // Si falla, usar el from original limpio
+    }
+
     const session = getSession(phone);
 
-    console.log(`📩 [${phone}] tipo=${msg.type} step=${session.step} body="${msg.body || ''}" hasLocation=${!!msg.location}`);
+    console.log(`📩 [${phone}] (from=${msg.from}) tipo=${msg.type} step=${session.step} body="${msg.body || ''}" hasLocation=${!!msg.location}`);
 
     // ── Mensaje de ubicación ──
     if (msg.location) {
