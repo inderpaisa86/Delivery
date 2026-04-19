@@ -121,6 +121,20 @@ public class PedidoService {
     }
 
     @Transactional
+    public PedidoResponse actualizarUbicacionPorId(Long id, Double lat, Double lng, String direccion) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado: " + id));
+        pedido.setLat(lat);
+        pedido.setLng(lng);
+        if (direccion != null && !direccion.isBlank()) {
+            pedido.setDireccion(direccion);
+        }
+        pedido = pedidoRepository.save(pedido);
+        log.info("Ubicación actualizada para pedido #{} ({}, {}) - {}", id, lat, lng, direccion);
+        return toResponse(pedido);
+    }
+
+    @Transactional
     public PedidoResponse cambiarEstado(Long id, EstadoPedido nuevoEstado) {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado: " + id));

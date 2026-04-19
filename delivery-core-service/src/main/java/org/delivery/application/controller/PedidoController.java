@@ -62,4 +62,14 @@ public class PedidoController {
             @RequestParam EstadoPedido estado) {
         return ResponseEntity.ok(pedidoService.cambiarEstado(id, estado));
     }
+
+    @PutMapping("/{id}/ubicacion")
+    @Operation(summary = "Actualizar ubicación de entrega del pedido")
+    public ResponseEntity<PedidoResponse> actualizarUbicacion(
+            @PathVariable Long id,
+            @RequestParam Double lat,
+            @RequestParam Double lng,
+            @RequestParam(required = false) String direccion) {
+        return ResponseEntity.ok(pedidoService.actualizarUbicacionPorId(id, lat, lng, direccion));
+    }
 }

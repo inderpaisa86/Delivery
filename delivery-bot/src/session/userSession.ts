@@ -1,14 +1,16 @@
-export type SessionStep = 'idle' | 'waiting_location';
+export type SessionStep = 'idle' | 'waiting_location' | 'waiting_details';
 
 export interface UserSession {
   step: SessionStep;
   pendingPedidoId?: number;
+  pendingLat?: number;
+  pendingLng?: number;
+  pendingAddress?: string;
   restauranteId: number;
 }
 
 const sessions = new Map<string, UserSession>();
 
-/** Restaurante por defecto — cambiar según tu configuración */
 const DEFAULT_RESTAURANTE_ID = Number(process.env.RESTAURANTE_ID || '1');
 
 export function getSession(phone: string): UserSession {

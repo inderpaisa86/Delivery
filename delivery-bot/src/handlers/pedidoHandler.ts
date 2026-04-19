@@ -39,13 +39,14 @@ export async function handlePedido(phone: string, texto: string): Promise<string
     updateSession(phone, { step: 'waiting_location', pendingPedidoId: response.id });
 
     const resumen = response.detalles
-      .map((d) => `• ${d.cantidad}x ${d.producto} - $${d.precio.toLocaleString('es-CO')}`)
+      .map((d) => `• ${d.cantidad}x ${d.producto} - $${(d.cantidad * d.precio).toLocaleString('es-CO')}`)
       .join('\n');
 
     return (
       `✅ *Pedido #${response.id} recibido*\n\n` +
       `${resumen}\n\n` +
-      `💰 *Total: $${response.total.toLocaleString('es-CO')}*\n\n` +
+      `💰 *Subtotal: $${response.total.toLocaleString('es-CO')}*\n` +
+      `🛵 _El valor del domicilio es adicional al pedido_\n\n` +
       `🔎 *Seguimiento:* #${response.id}\n\n` +
       `📍 Ahora envíanos tu *ubicación* para saber dónde entregar.\n` +
       `Toca 📎 → Ubicación → Enviar ubicación actual.`

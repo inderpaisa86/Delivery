@@ -3,8 +3,9 @@ const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
 import { handleMenu } from './handlers/menuHandler.js';
 import { handlePedido } from './handlers/pedidoHandler.js';
-import { handleUbicacion } from './handlers/ubicacionHandler.js';
-import { getSession } from './session/userSession.js';
+import { handleUbicacion, handleDetallesEntrega } from './handlers/ubicacionHandler.js';
+import { getSession, resetSession } from './session/userSession.js';
+import { iniciarPolling } from './services/notificaciones.js';
 
 const client = new Client({
   authStrategy: new LocalAuth(),
@@ -24,89 +25,102 @@ client.on('qr', (qr: string) => {
 client.on('ready', () => {
   console.log('\n✅ Bot conectado y listo!');
   console.log('📞 Esperando mensajes...\n');
+
+  // Iniciar polling de notificaciones
+  iniciarPolling(async (phone, message) => {
+    try {
+      await client.sendMessage(phone, message);
+    } catch (err) {
+      console.error(`Error enviando mensaje a ${phone}:`, err);
+    }
+  });
 });
 
-client.on('authenticated', () => {
-  console.log('🔐 Sesión autenticada');
-});
-
-client.on('auth_failure', (msg: string) => {
-  console.error('❌ Error de autenticación:', msg);
-});
-
-client.on('disconnected', (reason: string) => {
-  console.log('🔌 Desconectado:', reason);
-});
+client.on('authenticated', () => console.log('🔐 Sesión autenticada'));
+client.on('auth_failure', (msg: string) => console.error('❌ Error de autenticación:', msg));
+client.on('disconnected', (reason: string) => console.log('🔌 Desconectado:', reason));
 
 client.on('message', async (msg: InstanceType<typeof pkg.Message>) => {
   try {
-    // Ignorar mensajes de grupos y propios
     if (msg.from.includes('@g.us')) return;
     if (msg.fromMe) return;
 
     const phone = msg.from.replace('@c.us', '');
     const session = getSession(phone);
 
-    console.log(`📩 [${phone}] ${msg.type}: ${msg.body || '(ubicación)'}`);
+    console.log(`📩 [${phone}] tipo=${msg.type} step=${session.step} body="${msg.body || ''}" hasLocation=${!!msg.location}`);
 
     // ── Mensaje de ubicación ──
-    if (msg.type === 'location' || msg.location) {
+    if (msg.location) {
       const loc = msg.location;
-      if (loc) {
-        const reply = await handleUbicacion(
-          phone,
-          loc.latitude,
-          loc.longitude,
-          loc.description || undefined,
-        );
-        await msg.reply(reply);
-      }
-      return;
-    }
-
-    // ── Mensajes de texto ──
-    if (msg.type !== 'chat') return;
-
-    const texto = msg.body.trim().toLowerCase();
-
-    // Comando: hola / inicio
-    if (['hola', 'hi', 'inicio', 'empezar'].includes(texto)) {
-      await msg.reply(
-        '👋 *¡Hola! Bienvenido a Delivery App* 🛵\n\n' +
-        'Escribe *menu* para ver los productos disponibles.\n' +
-        'O envía tu pedido directamente:\n' +
-        '_"2 hamburguesas, 1 gaseosa"_',
-      );
-      return;
-    }
-
-    // Comando: menu
-    if (['menu', 'menú', 'carta', 'productos'].includes(texto)) {
-      const reply = await handleMenu(phone);
+      const address = loc.description || (loc as Record<string, unknown>).address as string || undefined;
+      console.log(`📍 [${phone}] lat=${loc.latitude} lng=${loc.longitude} address="${address || 'N/A'}"`);
+      const reply = await handleUbicacion(phone, loc.latitude, loc.longitude, address);
       await msg.reply(reply);
       return;
     }
 
-    // Si está esperando ubicación, recordarle
-    if (session.step === 'waiting_location') {
-      await msg.reply(
-        '📍 Necesitamos tu ubicación para entregar el pedido.\n\n' +
-        'Toca 📎 → Ubicación → Enviar ubicación actual.\n\n' +
-        '_Si quieres cancelar, escribe "cancelar"._',
-      );
-      return;
-    }
+    // Solo texto
+    if (msg.type !== 'chat' || !msg.body) return;
 
-    // Comando: cancelar
-    if (texto === 'cancelar') {
-      const { resetSession } = await import('./session/userSession.js');
+    const texto = msg.body.trim();
+    const textoLower = texto.toLowerCase();
+
+    // ── Cancelar (funciona en cualquier paso) ──
+    if (['cancelar', 'cancel', 'anular'].includes(textoLower)) {
       resetSession(phone);
       await msg.reply('❌ Pedido cancelado. Escribe *menu* para empezar de nuevo.');
       return;
     }
 
+    // ── Esperando datos de entrega ──
+    if (session.step === 'waiting_details') {
+      const reply = await handleDetallesEntrega(phone, texto);
+      await msg.reply(reply);
+      return;
+    }
+
+    // ── Esperando ubicación ──
+    if (session.step === 'waiting_location') {
+      await msg.reply(
+        '📍 Necesitamos tu *ubicación GPS* para entregar el pedido.\n\n' +
+        'Toca 📎 → *Ubicación* → Enviar ubicación actual.\n\n' +
+        '_Escribe "cancelar" para anular el pedido._',
+      );
+      return;
+    }
+
+    // ── Comandos generales (solo en estado idle) ──
+
+    if (['hola', 'hi', 'hello', 'inicio', 'empezar', 'ayuda', 'help'].includes(textoLower)) {
+      await msg.reply(
+        '👋 *¡Hola! Bienvenido a Delivery App* 🛵\n\n' +
+        '¿Qué deseas hacer?\n\n' +
+        '📋 Escribe *menu* para ver productos\n' +
+        '🛒 Envía tu pedido: _"2 hamburguesas, 1 gaseosa"_\n' +
+        '📍 Después de pedir, comparte tu *ubicación*\n' +
+        '❌ Escribe *cancelar* en cualquier momento',
+      );
+      return;
+    }
+
+    if (['menu', 'menú', 'carta', 'productos', 'ver menu', 'ver menú'].includes(textoLower)) {
+      const reply = await handleMenu(phone);
+      await msg.reply(reply);
+      return;
+    }
+
+    if (['estado', 'seguimiento', 'mi pedido'].includes(textoLower)) {
+      if (session.pendingPedidoId) {
+        await msg.reply(`📦 Tu pedido *#${session.pendingPedidoId}* está pendiente.\n\n📍 Envía tu ubicación para continuar.`);
+      } else {
+        await msg.reply('ℹ️ No tienes pedidos activos. Escribe *menu* para hacer uno.');
+      }
+      return;
+    }
+
     // Intentar parsear como pedido
-    const pedidoReply = await handlePedido(phone, msg.body);
+    const pedidoReply = await handlePedido(phone, texto);
     if (pedidoReply) {
       await msg.reply(pedidoReply);
       return;

@@ -1,9 +1,11 @@
-import { getSession, resetSession } from '../session/userSession.js';
+import { api } from '../services/apiClient.js';
+import { getSession, updateSession, resetSession } from '../session/userSession.js';
 
-const BASE_URL = process.env.API_URL || 'http://localhost:8080';
-const API_TOKEN = process.env.API_TOKEN || 'delivery-internal-token';
 const TRACKING_URL = process.env.TRACKING_URL || 'http://localhost:5173';
 
+/**
+ * Recibe la ubicación GPS y pide datos adicionales de entrega.
+ */
 export async function handleUbicacion(
   phone: string,
   lat: number,
@@ -16,35 +18,67 @@ export async function handleUbicacion(
     return 'ℹ️ No tienes pedidos pendientes de ubicación. Envía tu pedido primero.';
   }
 
-  const direccion = address || `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+  // Guardar coordenadas y pasar al siguiente paso
+  updateSession(phone, {
+    step: 'waiting_details',
+    pendingLat: lat,
+    pendingLng: lng,
+    pendingAddress: address || undefined,
+  });
+
+  console.log(`📍 [${phone}] Ubicación recibida: ${lat}, ${lng} - "${address || 'sin dirección'}"`);
+
+  return (
+    `📍 *Ubicación recibida*\n\n` +
+    `Ahora envíanos los datos de entrega para que el domiciliario te encuentre fácil:\n\n` +
+    `📝 Escribe en un solo mensaje:\n` +
+    `_Barrio, edificio/casa, torre, apto, referencias_\n\n` +
+    `Ejemplo: _"Barrio Chicó, Edificio Torres del Parque, Torre 2, Apto 501, portería principal"_`
+  );
+}
+
+/**
+ * Recibe los datos adicionales de entrega y confirma el pedido.
+ */
+export async function handleDetallesEntrega(
+  phone: string,
+  detalles: string,
+): Promise<string> {
+  const session = getSession(phone);
+
+  if (session.step !== 'waiting_details' || !session.pendingPedidoId || !session.pendingLat || !session.pendingLng) {
+    return 'ℹ️ No tienes pedidos pendientes. Envía tu pedido primero.';
+  }
+
+  // Construir dirección completa: dirección GPS + datos adicionales
+  const parts: string[] = [];
+  if (session.pendingAddress) parts.push(session.pendingAddress);
+  parts.push(detalles.trim());
+  const direccionCompleta = parts.join(' — ');
+
   const pedidoId = session.pendingPedidoId;
 
   try {
-    // Actualizar el pedido directamente en la BD via API
-    // Usamos el endpoint de obtener pedido para verificar y luego actualizamos
-    const res = await fetch(`${BASE_URL}/pedidos/${pedidoId}`, {
-      headers: { Authorization: `Bearer ${API_TOKEN}` },
-    });
+    const pedido = await api.actualizarUbicacion(
+      pedidoId,
+      session.pendingLat,
+      session.pendingLng,
+      direccionCompleta,
+    );
 
-    if (!res.ok) {
-      resetSession(phone);
-      return '⚠️ No se encontró el pedido. Intenta hacer uno nuevo.';
-    }
+    console.log(`✅ [${phone}] Pedido #${pedidoId} ubicación confirmada: ${direccionCompleta}`);
 
-    const pedido = await res.json();
-
-    // Resetear sesión
     resetSession(phone);
 
     return (
-      `✅ *Ubicación recibida*\n` +
-      `📍 ${direccion}\n\n` +
-      `Tu pedido *#${pedidoId}* está siendo procesado.\n` +
-      `🔗 Seguimiento: ${TRACKING_URL}/track/${pedido.trackingToken}\n\n` +
-      `¡Te avisaremos cuando esté listo! 🍽️`
+      `✅ *¡Pedido #${pedidoId} confirmado!*\n\n` +
+      `📍 *Dirección:* ${direccionCompleta}\n` +
+      `💰 *Total:* $${Number(pedido.total).toLocaleString('es-CO')}\n\n` +
+      `🔗 *Seguimiento:* ${TRACKING_URL}/track/${pedido.trackingToken}\n\n` +
+      `El restaurante está procesando tu pedido. ¡Te avisaremos cuando esté en camino! 🍽️`
     );
   } catch (err) {
-    console.error('Error procesando ubicación:', err);
-    return '⚠️ Error al procesar tu ubicación. Intenta de nuevo.';
+    console.error('Error confirmando pedido:', err);
+    return '⚠️ Error al confirmar tu pedido. Intenta enviar los datos de nuevo.';
   }
 }

@@ -61,4 +61,17 @@ export const api = {
 
   actualizarEstado: (pedidoId: number, estado: string) =>
     request<PedidoResponse>(`/pedidos/${pedidoId}/estado?estado=${estado}`, { method: 'PUT' }),
+
+  actualizarUbicacion: (pedidoId: number, lat: number, lng: number, direccion?: string) => {
+    const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
+    if (direccion) params.set('direccion', direccion);
+    return request<PedidoResponse>(`/pedidos/${pedidoId}/ubicacion?${params}`, { method: 'PUT' });
+  },
+
+  obtenerPedido: (pedidoId: number) =>
+    request<PedidoResponse>(`/pedidos/${pedidoId}`),
+
+  listarPedidosHoy: (restauranteId: number) =>
+    request<Page<PedidoResponse>>(`/pedidos/hoy?restauranteId=${restauranteId}&size=100&sort=fecha,desc`)
+      .then((p) => p.content),
 };

@@ -15,7 +15,6 @@ const NEXT: Partial<Record<EstadoPedido, { estado: EstadoPedido; label: string }
   [EstadoPedido.CONFIRMADO]: { estado: EstadoPedido.PREPARANDO, label: 'Preparar' },
   [EstadoPedido.PREPARANDO]: { estado: EstadoPedido.LISTO, label: 'Listo' },
   [EstadoPedido.LISTO]: { estado: EstadoPedido.EN_CAMINO, label: 'Despachar' },
-  [EstadoPedido.EN_CAMINO]: { estado: EstadoPedido.ENTREGADO, label: 'Entregado' },
 };
 
 function Stepper({ estado }: { estado: EstadoPedido }) {
@@ -94,7 +93,8 @@ export function PedidosPage() {
                   <EstadoBadge estado={p.estado} />
                   <span className="text-xl font-bold">${Number(p.total).toLocaleString()}</span>
                 </div>
-                <p className="text-sm font-semibold">{p.clienteNombre || p.clienteTelefono}</p>
+                <p className="text-sm font-semibold">{p.clienteNombre || 'Sin nombre'}</p>
+                <p className="text-xs text-[var(--text-secondary)]">📞 {p.clienteTelefono}</p>
                 <p className="text-xs text-[var(--text-muted)] truncate">📍 {p.direccion}</p>
                 <p className="text-xs text-[var(--text-muted)] mt-1">{p.detalles.map((d, i) => <span key={i}>{i > 0 && ' · '}{d.cantidad}x {d.producto}</span>)}</p>
               </div>
