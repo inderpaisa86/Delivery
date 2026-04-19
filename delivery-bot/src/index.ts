@@ -1,8 +1,9 @@
 import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
+// @ts-ignore
 import { handleMenu } from './handlers/menuHandler.js';
-import { handlePedido, handleNombre } from './handlers/pedidoHandler.js';
+import { handlePedido, handleNombre, handleAddressConfirm } from './handlers/pedidoHandler.js';
 import { handleUbicacion, handleDetallesEntrega } from './handlers/ubicacionHandler.js';
 import { getSession, resetSession } from './session/userSession.js';
 import { iniciarPolling } from './services/notificaciones.js';
@@ -44,7 +45,7 @@ client.on('authenticated', () => console.log('🔐 Sesión autenticada'));
 client.on('auth_failure', (msg: string) => console.error('❌ Error de autenticación:', msg));
 client.on('disconnected', (reason: string) => console.log('🔌 Desconectado:', reason));
 
-client.on('message', async (msg: InstanceType<typeof pkg.Message>) => {
+client.on('message', async (msg: any) => {
   try {
     if (msg.from.includes('@g.us')) return;
     if (msg.fromMe) return;
@@ -81,6 +82,13 @@ client.on('message', async (msg: InstanceType<typeof pkg.Message>) => {
     // ── Esperando nombre ──
     if (session.step === 'waiting_name') {
       const reply = await handleNombre(phone, texto);
+      await msg.reply(reply);
+      return;
+    }
+
+    // ── Esperando confirmación de dirección ──
+    if (session.step === 'waiting_address_confirm') {
+      const reply = await handleAddressConfirm(phone, texto);
       await msg.reply(reply);
       return;
     }

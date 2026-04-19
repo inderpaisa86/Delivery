@@ -30,13 +30,23 @@ export interface Producto {
 
 export interface PedidoResponse {
   id: number;
+  numeroDiario: number | null;
   restauranteNombre: string;
   clienteTelefono: string;
+  clienteNombre: string;
   direccion: string;
   estado: string;
   total: number;
   trackingToken: string;
   detalles: { producto: string; cantidad: number; precio: number }[];
+}
+
+export interface ClienteResponse {
+  id: number;
+  telefono: string;
+  nombre: string | null;
+  direccion: string | null;
+  restauranteId: number;
 }
 
 interface Page<T> {
@@ -74,4 +84,12 @@ export const api = {
   listarPedidosHoy: (restauranteId: number) =>
     request<Page<PedidoResponse>>(`/pedidos/hoy?restauranteId=${restauranteId}&size=100&sort=fecha,desc`)
       .then((p) => p.content),
+
+  buscarCliente: async (telefono: string, restauranteId: number): Promise<ClienteResponse | null> => {
+    try {
+      return await request<ClienteResponse>(`/clientes/buscar?telefono=${telefono}&restauranteId=${restauranteId}`);
+    } catch {
+      return null;
+    }
+  },
 };
